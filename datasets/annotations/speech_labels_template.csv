@@ -1,0 +1,5 @@
+audio_path,speaker_id,language,target_word,transcript,target_phoneme,observed_phoneme,error_category,accent,age_group,annotator_id
+datasets/raw/english/sample1.wav,SPK001,english,Red,[expert transcription],r,[expert annotation],[expert annotation],general_american,5-7,ANN001
+datasets/raw/english/sample2.wav,SPK001,english,Sun,[expert transcription],s,[expert annotation],[expert annotation],general_american,5-7,ANN001
+datasets/raw/hindi/sample3.wav,SPK002,hindi,राम,[expert transcription],र,[expert annotation],[expert annotation],standard_hindi,5-7,ANN002
+datasets/raw/hindi/sample4.wav,SPK002,hindi,पानी,[expert transcription],प,[expert annotation],[expert annotation],standard_hindi,5-7,ANN002

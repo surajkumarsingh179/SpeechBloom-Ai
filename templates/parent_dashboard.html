@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Parent Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="dash-header">
+  <div class="dash-header-left">
+    <h2>Family Overview 👨‍👩‍👧</h2>
+    <p>Monitor practice activity and phoneme accuracy for all your children.</p>
+  </div>
+  <div class="dash-header-actions">
+    <span id="sync-badge" class="badge badge-score" style="padding:7px 14px;">⚡ Connected</span>
+    <a href="/profile/" class="btn btn-white btn-sm">🧒 Manage Children</a>
+    <button class="btn btn-white btn-sm" onclick="window.print()">🖨️ Print Report</button>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Family Stats -->
+<div class="grid-4" style="margin-bottom:28px;">
+  <div class="card stat-card">
+    <div class="stat-value" id="parent-total-sessions">—</div>
+    <div class="stat-label">Total Sessions</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-value" id="parent-total-minutes">—</div>
+    <div class="stat-label">Practice Time</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-value" id="parent-child-count">—</div>
+    <div class="stat-label">Children Registered</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-value" id="parent-avg-accuracy" style="color:var(--success);">—</div>
+    <div class="stat-label">Avg. Pronunciation</div>
+  </div>
+</div>
+
+<!-- Children Grid + Articulation -->
+<div class="grid-2" style="margin-bottom:28px;">
+  <div class="card">
+    <div class="section-header" style="margin-bottom:16px;">
+      <h3 style="font-weight:900; color:var(--primary);">Learner Profiles</h3>
+      <a href="/profile/" class="btn btn-ghost btn-sm">+ Add Child</a>
+    </div>
+    <div id="children-summary-container">
+      <div class="card skeleton" style="height:80px;margin-bottom:12px;"></div>
+      <div class="card skeleton" style="height:80px;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-weight:900; color:var(--secondary); margin-bottom:20px;">Phoneme Analysis</h3>
+    <div style="margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:8px;">
+        <span>✅ Clear Articulations</span><span id="count-clean">0</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill success" id="bar-clean" style="width:0%;"></div></div>
+    </div>
+    <div style="margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:8px;">
+        <span>🔄 Sound Substitutions</span><span id="count-subs">0</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill warning" id="bar-subs" style="width:0%;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:8px;">
+        <span>⚠️ Distortions / Omissions</span><span id="count-dist">0</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill danger" id="bar-dist" style="width:0%;"></div></div>
+    </div>
+
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+      <p style="font-size:0.85rem; color:var(--text-muted); font-weight:700; margin-bottom:8px;">WHAT THESE MEAN</p>
+      <p style="font-size:0.83rem; color:var(--text-muted); line-height:1.6;">
+        <strong>Substitutions</strong> (e.g. saying /l/ for /s/) are common in young learners. <strong>Distortions</strong> are approximations. Both improve with consistent daily practice.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+  <div class="section-header" style="margin-bottom:16px;">
+    <h3 style="font-weight:900; color:var(--primary);">Recent Practice Activity</h3>
+  </div>
+  <div id="recent-activities-container">
+    <div class="card skeleton" style="height:60px;margin-bottom:8px;"></div>
+    <div class="card skeleton" style="height:60px;margin-bottom:8px;"></div>
+    <div class="card skeleton" style="height:60px;"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  {% if not is_logged_in %}
+    showToast('Please sign in to view the dashboard.', 'warn');
+    setTimeout(() => { window.location.href = '/login/'; }, 800);
+    return;
+  {% endif %}
+
+  try {
+    const res = await apiCall('/api/dashboard/parent');
+    if (!res.success) return;
+
+    document.getElementById('parent-total-sessions').textContent = res.total_sessions;
+    document.getElementById('parent-total-minutes').textContent  = `${res.weekly_practice_minutes}m`;
+    document.getElementById('parent-child-count').textContent    = res.total_children;
+
+    const badge = document.getElementById('sync-badge');
+    badge.textContent = res.supabase_connected ? '⚡ Supabase Synced' : '💾 Local Mode';
+    badge.className   = `badge ${res.supabase_connected ? 'badge-score' : 'badge-warn'}`;
+    badge.style.padding = '7px 14px';
+
+    // Children summary
+    const box = document.getElementById('children-summary-container');
+    let totalClean = 0, totalSubs = 0, totalDist = 0, scoreSum = 0;
+
+    if (res.children_summary && res.children_summary.length > 0) {
+      box.innerHTML = res.children_summary.map(item => {
+        totalClean += item.clean_count || 0;
+        totalSubs  += item.substitution_count || 0;
+        totalDist  += item.distortion_count || 0;
+        scoreSum   += item.average_score || 0;
+        const scoreColor = item.average_score >= 80 ? 'var(--success)' : item.average_score >= 55 ? 'var(--warning)' : 'var(--danger)';
+
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--border); gap:12px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:2rem;">${item.child.avatar || '🧒'}</span>
+              <div>
+                <div style="font-weight:900; font-size:1.05rem;">${item.child.name}</div>
+                <div style="font-size:0.83rem; color:var(--text-muted);">Age ${item.child.age} · ${(item.child.languages || ['English']).join(', ')} · ${item.practice_minutes} min</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span class="badge badge-primary">${item.total_sessions} sessions</span>
+              <span style="font-weight:900; color:${scoreColor};">${item.average_score}%</span>
+              <button class="btn btn-primary btn-xs" onclick="goToChildDashboard(${item.child.id}, '${item.child.name}', '${item.child.avatar || '🧒'}')">
+                Practice 🎯
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+
+      const avg = Math.round(scoreSum / res.children_summary.length);
+      document.getElementById('parent-avg-accuracy').textContent = `${avg}%`;
+    } else {
+      box.innerHTML = `
+        <div style="text-align:center; padding:32px 20px;">
+          <span style="font-size:2.4rem; display:block; margin-bottom:12px;">🌸</span>
+          <p style="color:var(--text-muted); margin-bottom:16px;">No children added yet.</p>
+          <a href="/profile/" class="btn btn-primary">+ Add Your Child</a>
+        </div>`;
+    }
+
+    // Articulation bars
+    const grand = totalClean + totalSubs + totalDist || 1;
+    document.getElementById('count-clean').textContent = totalClean;
+    document.getElementById('count-subs').textContent  = totalSubs;
+    document.getElementById('count-dist').textContent  = totalDist;
+    document.getElementById('bar-clean').style.width   = `${Math.round(totalClean/grand*100)}%`;
+    document.getElementById('bar-subs').style.width    = `${Math.round(totalSubs/grand*100)}%`;
+    document.getElementById('bar-dist').style.width    = `${Math.round(totalDist/grand*100)}%`;
+
+    // Recent activity
+    const actBox = document.getElementById('recent-activities-container');
+    if (res.detailed_reports && res.detailed_reports.length > 0) {
+      actBox.innerHTML = res.detailed_reports.map(rep => `
+        <div style="margin-bottom:28px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <span style="font-size:1.6rem;">${rep.avatar}</span>
+            <span style="font-weight:900; font-size:1.05rem;">${rep.child_name}</span>
+            <span class="badge badge-primary">${rep.total_sessions} sessions</span>
+            <span style="margin-left:auto; font-weight:900; color:${rep.avg_score >= 80 ? 'var(--success)' : 'var(--warning)'};">${rep.avg_score}% avg</span>
+          </div>
+          ${rep.recent_practice && rep.recent_practice.length > 0 ? `
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead><tr><th>Date</th><th>Score</th><th>Articulation</th><th>AI Feedback</th></tr></thead>
+                <tbody>
+                  ${rep.recent_practice.map(p => `
+                    <tr>
+                      <td>${p.created_at ? p.created_at.split('T')[0] : 'Recent'}</td>
+                      <td style="font-weight:900; color:${p.score >= 80 ? 'var(--success)' : 'var(--warning)'};">${Math.round(p.score)}%</td>
+                      <td><span class="badge ${p.error_category === 'none' ? 'badge-score' : 'badge-warn'}">${p.error_category || 'none'}</span></td>
+                      <td style="font-size:0.88rem;">${p.feedback || '—'}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>` : '<p style="color:var(--text-muted);font-size:0.9rem;padding:8px 0;">No sessions recorded yet.</p>'}
+        </div>`).join('<hr class="divider">');
+    } else {
+      actBox.innerHTML = '<p style="text-align:center;padding:24px;color:var(--text-muted);">No practice data yet. Start a practice session!</p>';
+    }
+
+  } catch (err) {
+    console.error('Parent dashboard error:', err);
+    showToast('Error loading dashboard data.', 'error');
+  }
+});
+
+function goToChildDashboard(id, name, avatar) {
+  setChildContext(id, name, avatar);
+  window.location.href = `/dashboard/?child_id=${id}`;
+}
+</script>
+{% endblock %}

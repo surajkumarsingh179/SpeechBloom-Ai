@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:60px auto;">
+  <a href="/" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-dim);font-weight:700;text-decoration:none;font-size:0.85rem;margin-bottom:28px;">← Back</a>
+
+  <div class="card" style="border-color:var(--border-light);">
+    <div style="text-align:center; margin-bottom:32px;">
+      <span style="font-size:2.4rem; display:block; margin-bottom:12px;">🌸</span>
+      <h2 style="font-size:1.5rem; font-weight:900; color:var(--text); letter-spacing:-0.02em;">Join SpeechBloom AI</h2>
+      <p style="color:var(--text-muted); margin-top:6px; font-size:0.9rem;">Create a free account for your family</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <form id="register-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="name">Your Full Name</label>
+        <input class="form-control" type="text" id="name" required placeholder="e.g. Priya Sharma" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input class="form-control" type="email" id="email" required placeholder="name@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div style="position:relative;">
+          <input class="form-control" type="password" id="password" required placeholder="At least 6 characters" autocomplete="new-password" style="padding-right:50px;">
+          <button type="button" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password'" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:1rem;" title="Show/hide password">👁️</button>
+        </div>
+      </div>
+      <input type="hidden" id="role" value="parent">
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:8px;" id="register-btn">
+        Create Account →
+      </button>
+    </form>
+
+    <p style="text-align:center; margin-top:20px; font-size:0.88rem; color:var(--text-muted);">
+      Already have an account?
+      <a href="/login/" style="color:var(--crimson); font-weight:800; text-decoration:none;">Sign in →</a>
+    </p>
+    <div style="margin-top:16px; padding:12px; background:var(--bg-card-2); border-radius:var(--radius-sm); font-size:0.78rem; color:var(--text-dim); text-align:center; border:1px solid var(--border);">
+      🔒 Your data stays private. Practice sessions are stored securely and only visible to you.
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('register-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn      = document.getElementById('register-btn');
+  var name     = document.getElementById('name').value.trim();
+  var email    = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+  var role     = document.getElementById('role').value;
+  if (!name || !email || !password) { showAlert('Please fill in all fields.', 'error'); return; }
+  if (password.length < 6) { showAlert('Password must be at least 6 characters.', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    var res = await apiCall('/api/register', 'POST', { name: name, email: email, password: password, role: role });
+    if (res.success) {
+      showToast('Account created!', 'success');
+      setTimeout(function() { window.location.href = res.redirect_url || '/profile/'; }, 900);
+    }
+  } catch(err) {
+    showAlert(err.message, 'error');
+    btn.disabled = false; btn.textContent = 'Create Account →';
+  }
+});
+</script>
+{% endblock %}

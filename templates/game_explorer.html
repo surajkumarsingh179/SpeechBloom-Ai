@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Word Explorer{% endblock %}
+
+{% block content %}
+
+<a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;margin-bottom:24px;">
+  ← Back to Games
+</a>
+
+<div style="text-align:center; margin-bottom:28px;">
+  <h2 style="font-size:1.6rem;font-weight:900;color:var(--text-dark);letter-spacing:-0.02em;">🗺️ Multilingual Word Explorer</h2>
+  <p style="color:var(--text-muted);margin-top:8px;">Tap 🔊 to hear the word, or tap Practice to record it yourself!</p>
+</div>
+
+<div class="grid-4" id="explorer-grid">
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">🐘</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">Elephant</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">हाथी (Haathi)</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('Elephant','english')">🔊</button>
+      <a href="/recording/?word=Elephant&phoneme=e&lang=english" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">🥭</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">आम (Aam)</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">Mango</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('आम','hindi')">🔊</button>
+      <a href="/recording/?word=आम&phoneme=अ&lang=hindi" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">🦋</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">Butterfly</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">तितली (Titli)</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('Butterfly','english')">🔊</button>
+      <a href="/recording/?word=Butterfly&phoneme=b&lang=english" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">💧</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">पानी (Paani)</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">Water</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('पानी','hindi')">🔊</button>
+      <a href="/recording/?word=पानी&phoneme=प&lang=hindi" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">☀️</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">Sun</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">सूरज (Sooraj)</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('Sun','english')">🔊</button>
+      <a href="/recording/?word=Sun&phoneme=s&lang=english" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">🪷</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">कमल (Kamal)</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">Lotus</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('कमल','hindi')">🔊</button>
+      <a href="/recording/?word=कमल&phoneme=क&lang=hindi" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">🐟</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">Fish</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">मछली (Machli)</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('Fish','english')">🔊</button>
+      <a href="/recording/?word=Fish&phoneme=f&lang=english" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+  <div class="card card-hover" style="text-align:center;padding:24px 16px;">
+    <div style="font-size:3.2rem;margin-bottom:12px;">⚽</div>
+    <h3 style="font-weight:900;margin-bottom:4px;">गेंद (Gend)</h3>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">Ball</p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-ghost btn-xs" onclick="speakWord('गेंद','hindi')">🔊</button>
+      <a href="/recording/?word=गेंद&phoneme=ग&lang=hindi" class="btn btn-primary btn-xs">Practice</a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Append child_id to all practice links
+document.addEventListener('DOMContentLoaded', () => {
+  const childId = getSelectedChildId();
+  if (!childId) return;
+  document.querySelectorAll('a[href^="/recording/"]').forEach(a => {
+    const url = new URL(a.href);
+    url.searchParams.set('child_id', childId);
+    a.href = url.pathname + url.search;
+  });
+});
+</script>
+{% endblock %}

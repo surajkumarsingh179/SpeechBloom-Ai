@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Phoneme Challenge{% endblock %}
+
+{% block content %}
+
+<a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;margin-bottom:24px;">
+  ← Back to Games
+</a>
+
+<div style="max-width:720px; margin:0 auto; text-align:center;">
+  <div class="card" style="padding:36px 32px;">
+    <span style="font-size:2.8rem;display:block;margin-bottom:12px;">🔤</span>
+    <h3 style="font-size:1.4rem;font-weight:900;color:var(--primary);margin-bottom:8px;">Phoneme Articulation Challenge</h3>
+    <p style="color:var(--text-muted);margin-bottom:28px;">Pick a sound card to practice targeted articulation.</p>
+
+    <h4 style="font-weight:900;color:var(--secondary);margin:0 0 14px; text-align:left;">🇮🇳 Hindi Sound Targets</h4>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;" id="hindi-sounds">
+      <a href="/recording/?word=राम&phoneme=र&lang=hindi"       class="btn btn-outline" style="font-size:1.3rem;">र (Ra)</a>
+      <a href="/recording/?word=कमल&phoneme=क&lang=hindi"      class="btn btn-outline" style="font-size:1.3rem;">क (Ka)</a>
+      <a href="/recording/?word=पानी&phoneme=प&lang=hindi"      class="btn btn-outline" style="font-size:1.3rem;">प (Pa)</a>
+      <a href="/recording/?word=सूरज&phoneme=स&lang=hindi"     class="btn btn-outline" style="font-size:1.3rem;">स (Sa)</a>
+      <a href="/recording/?word=माँ&phoneme=म&lang=hindi"      class="btn btn-outline" style="font-size:1.3rem;">म (Ma)</a>
+    </div>
+
+    <h4 style="font-weight:900;color:var(--accent);margin:0 0 14px; text-align:left;">🇬🇧 English Sound Targets</h4>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;" id="english-sounds">
+      <a href="/recording/?word=Red&phoneme=r&lang=english"     class="btn btn-outline" style="font-size:1.3rem;">/r/</a>
+      <a href="/recording/?word=Sun&phoneme=s&lang=english"     class="btn btn-outline" style="font-size:1.3rem;">/s/</a>
+      <a href="/recording/?word=Ship&phoneme=sh&lang=english"   class="btn btn-outline" style="font-size:1.3rem;">/sh/</a>
+      <a href="/recording/?word=Fish&phoneme=f&lang=english"    class="btn btn-outline" style="font-size:1.3rem;">/f/</a>
+      <a href="/recording/?word=Lion&phoneme=l&lang=english"    class="btn btn-outline" style="font-size:1.3rem;">/l/</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Append child_id to all phoneme links from localStorage
+document.addEventListener('DOMContentLoaded', () => {
+  const childId = getSelectedChildId();
+  if (!childId) return;
+  document.querySelectorAll('a[href^="/recording/"]').forEach(a => {
+    const url = new URL(a.href);
+    url.searchParams.set('child_id', childId);
+    a.href = url.pathname + url.search;
+  });
+});
+</script>
+{% endblock %}

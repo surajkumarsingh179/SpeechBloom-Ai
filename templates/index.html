@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Welcome to SpeechBloom AI{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ── -->
+<section class="page-hero">
+  <span class="section-label">🇮🇳 Hindi · 🇬🇧 English · AI-Powered</span>
+  <h1>
+    Every Child Deserves a<br>
+    <span class="gradient-text">Confident Voice</span>
+  </h1>
+  <p>A playful AI speech practice platform for children aged 2–15. Real-time phonetic feedback, 6 interactive games, and progress reports — in Hindi and English.</p>
+
+  {% if is_logged_in %}
+  <div class="hero-cta">
+    <a href="/profile/" class="btn btn-primary btn-lg">My Children 🧒</a>
+    <a href="/parent/"  class="btn btn-outline btn-lg">Dashboard</a>
+  </div>
+  {% else %}
+  <div class="hero-cta">
+    <a href="/register/" class="btn btn-primary btn-lg">Start for Free →</a>
+    <a href="/login/"    class="btn btn-outline btn-lg">Sign In</a>
+  </div>
+  {% endif %}
+
+  <div class="trust-row">
+    <div class="trust-item">🔒 Private &amp; Secure</div>
+    <div class="trust-item">🎮 Gamified Learning</div>
+    <div class="trust-item">📱 Any Device</div>
+    <div class="trust-item">🇮🇳 Hindi &amp; English</div>
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-wrap">
+  <div class="marquee-content">
+    <div class="marquee-item"><span class="marquee-dot"></span>Speech Practice</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Hindi हिंदी</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>English</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>6 Games</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Star Rewards</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>AI Feedback</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Progress Reports</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Multi-Child</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Real-Time Analysis</div>
+    <!-- duplicate for seamless loop -->
+    <div class="marquee-item"><span class="marquee-dot"></span>Speech Practice</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Hindi हिंदी</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>English</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>6 Games</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Star Rewards</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>AI Feedback</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Progress Reports</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Multi-Child</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Real-Time Analysis</div>
+  </div>
+</div>
+
+<!-- ── FEATURES ── -->
+<div style="padding: 80px 0 56px;">
+  <div style="text-align:center; margin-bottom:48px;">
+    <span class="section-label">What We Offer</span>
+    <h2 style="font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; color:var(--text); letter-spacing:-0.03em;">
+      Built for Every Child's Journey
+    </h2>
+    <div class="crimson-line"></div>
+  </div>
+
+  <div class="grid-3" style="gap:28px;">
+    <div class="feature-card tilt-card-1">
+      <span class="feature-icon">🇮🇳 🇬🇧</span>
+      <h3>Bilingual Practice</h3>
+      <p>Phoneme exercises for the Indian bilingual context — retroflex consonants, aspirated stops, and English phonetics side by side.</p>
+    </div>
+    <div class="feature-card tilt-card-2">
+      <span class="feature-icon">🎮</span>
+      <h3>6 Speech Games</h3>
+      <p>Repeat After Me, Word Explorer, Sound Matching, Picture to Word, Phoneme Challenge, and Daily Quests.</p>
+    </div>
+    <div class="feature-card tilt-card-3">
+      <span class="feature-icon">📊</span>
+      <h3>Progress Reports</h3>
+      <p>Phoneme accuracy breakdowns, substitution patterns, and practice history parents can review anytime.</p>
+    </div>
+    <div class="feature-card tilt-card-4">
+      <span class="feature-icon">🤖</span>
+      <h3>Real-Time AI Feedback</h3>
+      <p>MFCC acoustic analysis and phonetic alignment engine evaluate each recording and deliver instant feedback.</p>
+    </div>
+    <div class="feature-card tilt-card-5">
+      <span class="feature-icon">🧒</span>
+      <h3>Multi-Child Support</h3>
+      <p>Add multiple children. Each child's data, charts, and reports are completely separate and secure.</p>
+    </div>
+    <div class="feature-card tilt-card-6">
+      <span class="feature-icon">⭐</span>
+      <h3>Stars &amp; Badges</h3>
+      <p>Children earn stars and badges each session. Daily streaks keep them motivated to practice every day.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── HOW IT WORKS ── -->
+<div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:60px 40px; margin-bottom:56px;">
+  <div style="text-align:center; margin-bottom:48px;">
+    <span class="section-label">How It Works</span>
+    <h2 style="font-size:clamp(1.6rem,3.5vw,2.4rem); font-weight:900; color:var(--text); letter-spacing:-0.03em;">
+      From Sign-Up to Feedback in Four Steps
+    </h2>
+    <div class="crimson-line"></div>
+  </div>
+  <div class="steps-row">
+    <div class="step-item">
+      <div class="step-number">01</div>
+      <h4>Create Account</h4>
+      <p>Sign up as a parent and add your child's profile with name, age, and languages.</p>
+    </div>
+    <div class="step-item">
+      <div class="step-number">02</div>
+      <h4>Select a Child</h4>
+      <p>Choose which child to practice with. Each child has their own private session.</p>
+    </div>
+    <div class="step-item">
+      <div class="step-number">03</div>
+      <h4>Practice &amp; Play</h4>
+      <p>Pick a word, record speech, play games. The AI evaluates phoneme accuracy instantly.</p>
+    </div>
+    <div class="step-item">
+      <div class="step-number">04</div>
+      <h4>Track Progress</h4>
+      <p>Review charts, substitution patterns, and reports from the parent dashboard.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── CTA ── -->
+{% if not is_logged_in %}
+<div style="text-align:center; padding:80px 32px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:20px; position:relative; overflow:hidden;">
+  <div style="position:absolute; top:-80px; left:50%; transform:translateX(-50%); width:400px; height:400px; background:radial-gradient(circle, rgba(220,20,60,0.06) 0%, transparent 70%); pointer-events:none;"></div>
+  <span class="section-label">Get Started Today</span>
+  <h2 style="font-size:clamp(1.8rem,4vw,3rem); font-weight:900; color:var(--text); letter-spacing:-0.04em; margin-bottom:16px;">
+    Ready to Help Your Child<br>Find Their Voice?
+  </h2>
+  <p style="color:var(--text-muted); font-size:1rem; max-width:440px; margin:0 auto 32px; line-height:1.75;">
+    Free account. No credit card. Start practising in under a minute.
+  </p>
+  <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+    <a href="/register/" class="btn btn-primary btn-lg">Create Free Account →</a>
+    <a href="/about/"    class="btn btn-outline btn-lg">Learn More</a>
+  </div>
+</div>
+
+{% else %}
+<div style="text-align:center; padding:60px 32px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:20px;">
+  <h2 style="font-size:1.8rem; font-weight:900; color:var(--text); margin-bottom:12px;">
+    Welcome back, {{ user.name }} 👋
+  </h2>
+  <p style="color:var(--text-muted); margin-bottom:28px;">Pick up where you left off or add a new child.</p>
+  <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+    <a href="/profile/" class="btn btn-primary btn-lg">My Children 🧒</a>
+    <a href="/parent/"  class="btn btn-outline btn-lg">Parent Dashboard</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

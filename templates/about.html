@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div style="max-width:820px; margin:20px auto;">
+  <div class="card" style="padding:48px 40px; border-color:var(--border-light);">
+
+    <div style="margin-bottom:36px;">
+      <span class="section-label">About Us</span>
+      <h2 style="font-size:clamp(1.8rem,4vw,2.6rem); font-weight:900; color:var(--text); letter-spacing:-0.03em; line-height:1.1;">
+        About SpeechBloom AI
+      </h2>
+      <div class="crimson-line" style="margin:14px 0;"></div>
+    </div>
+
+    <p style="margin-bottom:20px; line-height:1.85; color:var(--text-body);">
+      SpeechBloom AI was created to give multilingual children engaging, accessible, and thoughtfully designed pronunciation practice. By addressing unique Indian language acoustic features — including Hindi retroflex consonants, dental stops, aspirated consonants, and English–Hindi code-switching — SpeechBloom bridges the gap between formal sessions and consistent home practice.
+    </p>
+
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin:28px 0;">
+      <div style="padding:20px; background:var(--bg-card-2); border-radius:var(--radius-sm); border:1px solid var(--border);">
+        <div style="font-size:1.5rem; margin-bottom:10px; color:var(--crimson);">🎯</div>
+        <h4 style="font-weight:900; color:var(--text); margin-bottom:8px;">Our Mission</h4>
+        <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.65;">Make daily speech practice joyful, measurable, and accessible to every Indian family.</p>
+      </div>
+      <div style="padding:20px; background:var(--bg-card-2); border-radius:var(--radius-sm); border:1px solid var(--border);">
+        <div style="font-size:1.5rem; margin-bottom:10px; color:var(--crimson);">🤖</div>
+        <h4 style="font-weight:900; color:var(--text); margin-bottom:8px;">The AI Engine</h4>
+        <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.65;">MFCC acoustic feature extraction with phonetic string alignment detects substitutions, distortions, and omissions in real time.</p>
+      </div>
+    </div>
+
+    <h3 style="font-weight:900; color:var(--text); margin:28px 0 14px; font-size:1.05rem; letter-spacing:0.02em;">Data Privacy</h3>
+    <ul style="padding-left:20px; line-height:2.1; color:var(--text-body); font-size:0.9rem;">
+      <li>Audio recordings are stored locally or in access-controlled Supabase Storage.</li>
+      <li>Pediatric speaker records are pseudonymous — no personally identifiable audio metadata retained.</li>
+      <li>Parents and guardians retain full authority to request data deletion at any time.</li>
+      <li>No recording is ever shared with third parties.</li>
+    </ul>
+
+    {% if not is_logged_in %}
+    <div style="text-align:center; margin-top:40px; padding-top:28px; border-top:1px solid var(--border);">
+      <p style="color:var(--text-muted); margin-bottom:16px;">Ready to start your child's speech journey?</p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <a href="/register/" class="btn btn-primary">Create Free Account →</a>
+        <a href="/login/"    class="btn btn-outline">Sign In</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

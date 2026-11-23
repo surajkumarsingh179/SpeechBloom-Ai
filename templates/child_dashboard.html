@@ -1,0 +1,752 @@
+{% extends "base.html" %}
+{% block title %}Child Practice Hub{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Badge styles ── */
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card-2);
+  transition: all 0.25s ease;
+  min-width: 76px;
+  text-align: center;
+  position: relative;
+}
+
+.badge-item.earned {
+  border-color: var(--gold);
+  background: rgba(255,215,0,0.06);
+  box-shadow: 0 0 16px rgba(255,215,0,0.18);
+}
+
+.badge-item.earned .badge-emoji {
+  filter: none;
+  animation: badgePop 0.5s ease;
+}
+
+.badge-item.locked .badge-emoji {
+  filter: grayscale(1) opacity(0.3);
+}
+
+.badge-emoji {
+  font-size: 2rem;
+  line-height: 1;
+  display: block;
+}
+
+.badge-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.badge-item.earned .badge-label { color: var(--text); }
+
+.badge-item.earned::after {
+  content: '✓';
+  position: absolute;
+  top: -6px; right: -6px;
+  background: var(--gold);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 900;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@keyframes badgePop {
+  0%   { transform: scale(0.5); }
+  60%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* ── Quest word items ── */
+.quest-word-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card-2);
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+  gap: 10px;
+}
+.quest-word-item.done {
+  border-color: var(--success);
+  background: rgba(34,197,94,0.06);
+}
+.quest-word-item.done .quest-word-text {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+.quest-check {
+  font-size: 1.1rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div id="alert-box"></div>
+
+<!-- ── CHILD HEADER ── -->
+<div class="dash-header" id="child-dash-header">
+  <div class="dash-header-left" style="display:flex; align-items:center; gap:16px;">
+    <span id="child-avatar-big" style="font-size:3rem; line-height:1;">🧒</span>
+    <div>
+      <h2 id="child-dash-name">Loading…</h2>
+      <p id="child-dash-sub" style="color:var(--text-muted);">Practice Hub · Let's bloom today! 🌸</p>
+    </div>
+  </div>
+  <div class="dash-header-actions">
+    <a href="/profile/" class="btn btn-white btn-sm">← Switch Child</a>
+    <a href="/parent/"  class="btn btn-white btn-sm">📊 Reports</a>
+  </div>
+</div>
+
+<!-- ── CHILD NAV ── -->
+<nav class="child-nav" id="child-section-nav">
+  <a class="child-nav-btn active" id="tab-overview"  href="#" onclick="showSection('overview',  this); return false;">🏠 Overview</a>
+  <a class="child-nav-btn"        id="tab-practice"  href="#" onclick="showSection('practice',  this); return false;">🎯 Practice</a>
+  <a class="child-nav-btn"        id="tab-games"     href="#" onclick="showSection('games',     this); return false;">🎮 Games</a>
+  <a class="child-nav-btn"        id="tab-progress"  href="#" onclick="showSection('progress',  this); return false;">📈 Progress</a>
+  <a class="child-nav-btn"        id="tab-reports"   href="#" onclick="showSection('reports',   this); return false;">📋 Reports</a>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════
+     OVERVIEW
+     ════════════════════════════════════════════════════════ -->
+<div id="section-overview">
+
+  <!-- Stats Row -->
+  <div class="grid-4" style="margin-bottom:28px;">
+    <div class="card stat-card">
+      <div class="stat-value" id="stat-sessions">—</div>
+      <div class="stat-label">Words Practiced</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-value" id="stat-score" style="color:var(--success);">—</div>
+      <div class="stat-label">Average Score</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-value" id="stat-stars" style="color:var(--gold);">—</div>
+      <div class="stat-label">Stars Earned</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-value" id="stat-streak" style="color:var(--crimson);">—</div>
+      <div class="stat-label">Day Streak</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- ── Daily Quest ── -->
+    <div class="card" style="background:var(--bg-card);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <h3 style="font-weight:900; color:var(--text); font-size:1.05rem;">⭐ Today's Speech Quest</h3>
+        <span id="quest-progress-badge" class="badge badge-primary">0 / 3</span>
+      </div>
+
+      <div id="quest-words-container">
+        <!-- Populated by JS -->
+        <div class="card skeleton" style="height:52px; margin-bottom:10px;"></div>
+        <div class="card skeleton" style="height:52px; margin-bottom:10px;"></div>
+        <div class="card skeleton" style="height:52px;"></div>
+      </div>
+
+      <div id="quest-all-done" style="display:none; text-align:center; padding:12px; margin-bottom:16px; background:rgba(34,197,94,0.1); border:1px solid var(--success); border-radius:var(--radius-sm);">
+        <span style="font-size:1.5rem;">🏆</span>
+        <p style="font-weight:900; color:var(--success); margin-top:4px;">Quest Complete! Well done!</p>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%; margin-top:12px;" id="quest-start-btn" onclick="startQuestWord()">
+        Start Quest 🚀
+      </button>
+    </div>
+
+    <!-- ── Badges ── -->
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <h3 style="font-weight:900; color:var(--text); font-size:1.05rem;">🏆 Badges &amp; Achievements</h3>
+        <span id="badges-earned-count" class="badge badge-score">0 earned</span>
+      </div>
+
+      <div id="badges-container" style="display:flex; flex-wrap:wrap; gap:10px;">
+        <!-- Skeleton placeholders -->
+        <div class="card skeleton" style="width:76px;height:90px;"></div>
+        <div class="card skeleton" style="width:76px;height:90px;"></div>
+        <div class="card skeleton" style="width:76px;height:90px;"></div>
+        <div class="card skeleton" style="width:76px;height:90px;"></div>
+        <div class="card skeleton" style="width:76px;height:90px;"></div>
+      </div>
+
+      <p id="badges-hint" style="font-size:0.82rem; color:var(--text-muted); margin-top:14px;">Complete practices to unlock badges!</p>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card" style="margin-top:24px; padding:24px 28px;">
+    <h3 style="font-weight:900; color:var(--text); margin-bottom:16px;">Quick Actions</h3>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button class="btn btn-primary"   onclick="showSection('practice', document.getElementById('tab-practice'))">🎯 Practice Words</button>
+      <button class="btn btn-secondary" onclick="showSection('games',    document.getElementById('tab-games'))">🎮 Play Games</button>
+      <button class="btn btn-accent"    onclick="showSection('progress', document.getElementById('tab-progress'))">📈 View Progress</button>
+      <button class="btn btn-ghost"     onclick="showSection('reports',  document.getElementById('tab-reports'))">📋 View Reports</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PRACTICE
+     ════════════════════════════════════════════════════════ -->
+<div id="section-practice" style="display:none;">
+  <div class="section-header">
+    <div>
+      <div class="section-title">🎯 Pronunciation Practice</div>
+      <div class="section-subtitle">Pick a word and practice your pronunciation</div>
+    </div>
+    <div class="tab-group">
+      <button class="tab-btn active" id="prac-tab-english" onclick="filterPractice('english', this)">🇬🇧 English</button>
+      <button class="tab-btn"        id="prac-tab-hindi"   onclick="filterPractice('hindi',   this)">🇮🇳 Hindi</button>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px;">
+    <button class="btn btn-ghost btn-sm active-filter" onclick="filterCategory('', this)">All</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterCategory('articulation', this)">Articulation</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterCategory('phoneme', this)">Phonemes</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterCategory('word', this)">Words</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterCategory('sentence', this)">Sentences 💬</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterCategory('puzzle', this)">Puzzles 🧩</button>
+  </div>
+
+  <div class="grid-3" id="practice-exercise-grid">
+    <div class="card skeleton" style="height:160px;"></div>
+    <div class="card skeleton" style="height:160px;"></div>
+    <div class="card skeleton" style="height:160px;"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     GAMES
+     ════════════════════════════════════════════════════════ -->
+<div id="section-games" style="display:none;">
+  <div class="section-header">
+    <div>
+      <div class="section-title">🎮 Speech Games</div>
+      <div class="section-subtitle">6 fun games designed to build speaking confidence</div>
+    </div>
+  </div>
+  <div class="grid-3">
+    <div class="game-card card-hover" style="border:1.5px solid rgba(255,215,0,0.4); box-shadow:0 0 24px rgba(255,215,0,0.12); grid-column:1/-1;">
+      <div class="game-card-top" style="background:linear-gradient(135deg, rgba(255,215,0,0.12), rgba(220,20,60,0.1));">
+        <span class="game-card-emoji" style="font-size:2.4rem;">🐱🎶</span>
+        <div>
+          <h3 style="font-weight:900;color:var(--text);margin:0;font-size:1.25rem;">The Dancing Cat Sound Puzzle</h3>
+          <span class="badge badge-primary" style="font-size:0.75rem;padding:3px 10px;margin-top:6px;">✨ NEW &amp; FEATURED PUZZLE GAME</span>
+        </div>
+      </div>
+      <div class="game-card-body">
+        <p style="color:var(--text-body);font-size:0.95rem;margin-bottom:16px;line-height:1.5;">
+          Solve fun sound puzzles and speak words into the mic! If your score is high, watch the cute cat groove, put on party glasses, and dance to upbeat background music! If you need practice, the cat encourages you with gentle purrs and meows!
+        </p>
+        <a href="#" onclick="goToGame('cat_puzzle')" class="btn btn-primary btn-pulse" style="width:100%; font-size:1.05rem; padding:12px;">Play Dancing Cat Sound Puzzle 🐾</a>
+      </div>
+    </div>
+    <div class="game-card card-hover">
+      <div class="game-card-top"><span class="game-card-emoji">🔊</span><h3 style="font-weight:900;color:var(--text);">Repeat After Me</h3></div>
+      <div class="game-card-body"><p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Listen to clear syllables and mirror the sounds exactly.</p><a href="#" onclick="goToGame('repeat')" class="btn btn-primary" style="width:100%;">Play Game →</a></div>
+    </div>
+    <div class="game-card card-hover">
+      <div class="game-card-top"><span class="game-card-emoji">🗺️</span><h3 style="font-weight:900;color:var(--text);">Word Explorer</h3></div>
+      <div class="game-card-body"><p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Discover animals, fruits, and colours in Hindi &amp; English.</p><a href="#" onclick="goToGame('explorer')" class="btn btn-secondary" style="width:100%;">Play Game →</a></div>
+    </div>
+    <div class="game-card card-hover">
+      <div class="game-card-top"><span class="game-card-emoji">🎵</span><h3 style="font-weight:900;color:var(--text);">Sound Matching</h3></div>
+      <div class="game-card-body"><p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Match phonemes with target pictures and words.</p><a href="#" onclick="goToGame('matching')" class="btn btn-accent" style="width:100%;">Play Game →</a></div>
+    </div>
+    <div class="game-card card-hover">
+      <div class="game-card-top"><span class="game-card-emoji">🖼️</span><h3 style="font-weight:900;color:var(--text);">Picture to Word</h3></div>
+      <div class="game-card-body"><p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">See the illustration and say its name out loud.</p><a href="#" onclick="goToGame('picture')" class="btn btn-primary" style="width:100%;">Play Game →</a></div>
+    </div>
+    <div class="game-card card-hover">
+      <div class="game-card-top"><span class="game-card-emoji">🔤</span><h3 style="font-weight:900;color:var(--text);">Phoneme Challenge</h3></div>
+      <div class="game-card-body"><p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Master individual vowels and consonants one at a time.</p><a href="#" onclick="goToGame('phoneme')" class="btn btn-secondary" style="width:100%;">Play Game →</a></div>
+    </div>
+    <div class="game-card card-hover">
+      <div class="game-card-top" style="background:rgba(255,215,0,0.06);"><span class="game-card-emoji">🌟</span><h3 style="font-weight:900;color:var(--text);">Daily Speech Quest</h3></div>
+      <div class="game-card-body"><p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Complete your daily 3-word adventure and earn a badge.</p><a href="#" onclick="goToGame('quest')" class="btn btn-accent" style="width:100%;">Start Quest →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PROGRESS
+     ════════════════════════════════════════════════════════ -->
+<div id="section-progress" style="display:none;">
+  <div class="section-header">
+    <div>
+      <div class="section-title">📈 Progress Analytics</div>
+      <div class="section-subtitle">Visualise scores, consistency, and speech improvement over time</div>
+    </div>
+  </div>
+  <div class="chart-box" style="margin-bottom:24px;">
+    <h3 style="font-weight:900; color:var(--crimson); margin-bottom:20px;">Score Trend — Last 7 Days</h3>
+    <canvas id="progressChart" style="max-height:300px;"></canvas>
+  </div>
+  <div class="card">
+    <h3 style="font-weight:900; color:var(--text); margin-bottom:16px;">Recent Practice Sessions</h3>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Word</th><th>Score</th><th>Feedback</th><th>Articulation</th></tr></thead>
+        <tbody id="progress-sessions-body">
+          <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     REPORTS
+     ════════════════════════════════════════════════════════ -->
+<div id="section-reports" style="display:none;">
+  <div class="section-header">
+    <div>
+      <div class="section-title">📋 Detailed Performance Report</div>
+      <div class="section-subtitle">Phoneme accuracy breakdown and articulation patterns</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="window.print()">🖨️ Print Report</button>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card">
+      <h3 style="font-weight:900; color:var(--crimson); margin-bottom:16px;">Articulation Breakdown</h3>
+      <div>
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:6px; color:var(--text);">
+            <span>✅ Clear Articulations</span><span id="count-clean">0</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill success" id="bar-clean" style="width:0%;"></div></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:6px; color:var(--text);">
+            <span>🔄 Sound Substitutions</span><span id="count-subs">0</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill warning" id="bar-subs" style="width:0%;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-weight:800; margin-bottom:6px; color:var(--text);">
+            <span>⚠️ Distortions / Omissions</span><span id="count-dist">0</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill danger" id="bar-dist" style="width:0%;"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="font-weight:900; color:var(--text); margin-bottom:16px;">Summary Stats</h3>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:12px;">
+          <span style="color:var(--text-muted); font-weight:700;">Unique Words Practiced</span>
+          <span style="font-weight:900; color:var(--text);" id="rep-total-sessions">—</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:12px;">
+          <span style="color:var(--text-muted); font-weight:700;">Average Score</span>
+          <span style="font-weight:900; color:var(--success);" id="rep-avg-score">—</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-muted); font-weight:700;">Total Sessions</span>
+          <span style="font-weight:900; color:var(--text);" id="rep-duration">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-weight:900; color:var(--crimson); margin-bottom:16px;">Recent Activity Log</h3>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr><th>Date</th><th>Score</th><th>Target Word</th><th>Heard As</th><th>Articulation</th><th>AI Feedback</th></tr>
+        </thead>
+        <tbody id="report-sessions-body">
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Loading report…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/practice.js"></script>
+<script src="/static/js/postures.js"></script>
+
+<script>
+let currentChildId  = null;
+let currentLang     = 'english';
+let currentCategory = '';
+let allExercises    = [];
+let progressChart   = null;
+let questWords      = [];   // today's quest word objects
+
+// ── INIT ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  {% if not is_logged_in %}
+    showToast('Please sign in to continue.', 'warn');
+    setTimeout(() => { window.location.href = '/login/'; }, 800);
+    return;
+  {% endif %}
+
+  const params   = new URLSearchParams(window.location.search);
+  const urlChild = params.get('child_id');
+  if (urlChild) setSelectedChildId(urlChild);
+  currentChildId = getSelectedChildId();
+
+  if (!currentChildId) {
+    showToast('Please select a child profile first.', 'warn');
+    setTimeout(() => { window.location.href = '/profile/'; }, 800);
+    return;
+  }
+
+  document.getElementById('child-avatar-big').textContent = getChildAvatar();
+  document.getElementById('child-dash-name').textContent  = `${getChildName()}'s Practice Hub`;
+  document.title = `${getChildName()} — SpeechBloom AI`;
+  updateNavChildBadge();
+
+  await loadOverviewStats();
+
+  const hash = window.location.hash.replace('#', '');
+  if (['practice','games','progress','reports'].includes(hash)) {
+    showSection(hash, document.getElementById(`tab-${hash}`));
+  }
+});
+
+// ── SECTION SWITCHER ─────────────────────────────────────
+function showSection(name, btn) {
+  ['overview','practice','games','progress','reports'].forEach(s => {
+    document.getElementById(`section-${s}`).style.display = 'none';
+  });
+  document.querySelectorAll('.child-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`section-${name}`).style.display = 'block';
+  if (btn) btn.classList.add('active');
+  window.location.hash = name === 'overview' ? '' : name;
+  if (name === 'practice' && allExercises.length === 0) loadExercises();
+  if (name === 'progress') loadProgress();
+  if (name === 'reports')  loadReports();
+}
+
+// ── OVERVIEW STATS ────────────────────────────────────────
+async function loadOverviewStats() {
+  try {
+    // 1. Unique words practiced (the real "Total Practices" metric)
+    const uw = await apiCall(`/api/unique-words/${currentChildId}`);
+    document.getElementById('stat-sessions').textContent = uw.unique_words || 0;
+
+    // 2. Average score + streak from progress API
+    const prog = await apiCall(`/api/progress/${currentChildId}`);
+    if (prog.success) {
+      document.getElementById('stat-score').textContent  = `${prog.stats.average_score || 0}%`;
+      document.getElementById('stat-streak').textContent = `${prog.stats.streak_days || 0} 🔥`;
+    }
+
+    // 3. Stars
+    const gr = await apiCall(`/api/games/progress/${currentChildId}`);
+    if (gr.success) {
+      document.getElementById('stat-stars').textContent = `${gr.total_stars || 0} ⭐`;
+    }
+
+    // 4. Daily Quest — smart, child-aware
+    await loadDailyQuest();
+
+    // 5. Badges — real earned state
+    await loadBadges();
+
+  } catch(e) { console.warn('Overview load error:', e); }
+}
+
+// ── DAILY QUEST ───────────────────────────────────────────
+async function loadDailyQuest() {
+  try {
+    const res = await apiCall(`/api/daily-quest/${currentChildId}`);
+    if (!res.success) return;
+
+    questWords = res.quest;
+    // Persist active quest list in sessionStorage
+    sessionStorage.setItem('speechbloom_daily_quest_' + currentChildId, JSON.stringify(questWords));
+
+    const container  = document.getElementById('quest-words-container');
+    const allDoneBox = document.getElementById('quest-all-done');
+    const badge      = document.getElementById('quest-progress-badge');
+    const startBtn   = document.getElementById('quest-start-btn');
+
+    badge.textContent = `${res.completed} / ${res.total}`;
+
+    if (res.all_done) {
+      allDoneBox.style.display = 'block';
+      allDoneBox.innerHTML = `
+        <span style="font-size:2rem; display:block; margin-bottom:6px;">🌟🏆🌟</span>
+        <h4 style="font-weight:900; color:var(--success); margin-bottom:6px; font-size:1.15rem;">Daily Speech Quest Complete!</h4>
+        <p style="font-size:0.92rem; color:var(--text); margin-bottom:10px; font-weight:700;">
+          All done for today! You have completed your daily speech practice. No more practice required today!
+        </p>
+        <p style="font-size:0.84rem; color:var(--text-muted); font-weight:700;">
+          Want to practice more? Head over to Speech Games &amp; Puzzles below! 🎮
+        </p>
+      `;
+      startBtn.textContent   = '🎮 Play Games & Puzzles 🚀';
+      startBtn.className     = 'btn btn-primary btn-pulse';
+      startBtn.disabled      = false;
+      startBtn.style.opacity = '1';
+      startBtn.onclick       = () => goToGamesSection();
+    } else {
+      allDoneBox.style.display = 'none';
+      startBtn.disabled        = false;
+      startBtn.style.opacity   = '1';
+      startBtn.className       = 'btn btn-primary';
+      startBtn.onclick         = () => startQuestWord();
+      const nextWord = questWords.find(w => !w.completed);
+      if (nextWord) {
+        startBtn.textContent = `Practice: ${nextWord.emoji || '🎯'} ${nextWord.word} 🚀`;
+      } else {
+        startBtn.textContent = 'Start Quest 🚀';
+      }
+    }
+
+    container.innerHTML = questWords.map((w, i) => `
+      <div class="quest-word-item card-hover ${w.completed ? 'done' : ''}" id="quest-item-${i}" onclick="startQuestWordAt(${i})" style="cursor:pointer; transition:all 0.2s ease;" title="Tap to practice ${w.word}">
+        <span style="font-size:1.6rem; flex-shrink:0;">${w.emoji}</span>
+        <div style="flex:1;">
+          <div class="quest-word-text" style="font-weight:900; color:var(--text); font-size:1rem; display:flex; align-items:center; gap:8px;">
+            ${w.word}
+            ${w.completed ? '<span class="badge badge-score" style="font-size:0.68rem; padding:2px 8px;">COMPLETED</span>' : '<span class="badge badge-primary" style="font-size:0.68rem; padding:2px 8px;">PRACTICE</span>'}
+          </div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-top:3px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span>/${w.phoneme}/ · ${w.lang === 'hindi' ? '🇮🇳 Hindi' : '🇬🇧 English'}</span>
+            <span class="badge badge-outline" style="font-size:0.72rem; padding:1px 7px;">${typeof getShortPostureCue === 'function' ? getShortPostureCue(w.phoneme, w.word) : '👅 Tongue Guide'}</span>
+          </div>
+        </div>
+        <span class="quest-check" style="font-size:1.2rem;">${w.completed ? '✅' : '👉'}</span>
+      </div>
+    `).join('');
+
+  } catch(e) { console.warn('Quest load error:', e); }
+}
+
+function startQuestWord() {
+  if (!questWords || questWords.length === 0) return;
+  const nextIdx = questWords.findIndex(w => !w.completed);
+  startQuestWordAt(nextIdx >= 0 ? nextIdx : 0);
+}
+
+function startQuestWordAt(index) {
+  if (!questWords || questWords.length === 0) return;
+  const target = questWords[index] || questWords[0];
+  sessionStorage.setItem('speechbloom_daily_quest_' + currentChildId, JSON.stringify(questWords));
+  window.location.href = `/recording/?word=${encodeURIComponent(target.word)}&phoneme=${encodeURIComponent(target.phoneme)}&lang=${target.lang}&child_id=${currentChildId}&quest=true&step=${index}&total=${questWords.length}`;
+}
+
+// ── BADGES ────────────────────────────────────────────────
+async function loadBadges() {
+  try {
+    const res = await apiCall(`/api/badges/${currentChildId}`);
+    if (!res.success) return;
+
+    const badges   = res.badges;
+    const earned   = badges.filter(b => b.earned).length;
+    const container = document.getElementById('badges-container');
+    const hintEl   = document.getElementById('badges-hint');
+    const countEl  = document.getElementById('badges-earned-count');
+
+    countEl.textContent = `${earned} earned`;
+    countEl.className   = earned > 0 ? 'badge badge-score' : 'badge badge-warn';
+
+    container.innerHTML = badges.map(b => `
+      <div class="badge-item ${b.earned ? 'earned' : 'locked'}" title="${b.desc}">
+        <span class="badge-emoji">${b.emoji}</span>
+        <span class="badge-label">${b.label}</span>
+      </div>
+    `).join('');
+
+    if (earned > 0) {
+      hintEl.textContent = `${earned} of ${badges.length} badges unlocked — keep going! 🌸`;
+    } else {
+      hintEl.textContent = 'Complete practices to unlock badges!';
+    }
+
+  } catch(e) { console.warn('Badges load error:', e); }
+}
+
+// ── PRACTICE EXERCISES ────────────────────────────────────
+async function loadExercises() {
+  try {
+    const res = await apiCall(`/api/exercises?language=${currentLang}&category=${currentCategory}`);
+    if (res.success) { allExercises = res.exercises; renderExercises(allExercises); }
+  } catch(e) {
+    document.getElementById('practice-exercise-grid').innerHTML =
+      '<p style="color:var(--text-muted);">Unable to load exercises.</p>';
+  }
+}
+
+function renderExercises(exercises) {
+  const grid = document.getElementById('practice-exercise-grid');
+  if (!exercises || exercises.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:48px 20px;">
+        <span style="font-size:3rem;">🌸</span>
+        <h3 style="color:var(--crimson); margin:12px 0;">No exercises found</h3>
+        <p style="color:var(--text-muted);">Try a different language or category filter.</p>
+      </div>`;
+    return;
+  }
+  grid.innerHTML = exercises.slice(0, 18).map(ex => `
+    <div class="exercise-card card-hover" onclick="startExercise('${ex.id}', '${escapeStr(ex.target_word)}', '${escapeStr(ex.target_phoneme||'')}', '${ex.language}')">
+      <span class="badge ${ex.language === 'hindi' ? 'badge-hindi' : 'badge-english'}" style="margin-bottom:8px;">
+        ${ex.language === 'hindi' ? '🇮🇳 Hindi' : '🇬🇧 English'}
+      </span>
+      <div class="word-label">${ex.target_word}</div>
+      <div class="phoneme-label">${ex.target_phoneme ? `/${ex.target_phoneme}/` : ''}</div>
+      <div style="margin:4px 0 8px; font-size:0.75rem; color:var(--text-muted); font-weight:700;">
+        ${typeof getShortPostureCue === 'function' ? getShortPostureCue(ex.target_phoneme, ex.target_word) : ''}
+      </div>
+      <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
+        <span class="badge badge-primary">${ex.category}</span>
+        ${'⭐'.repeat(ex.difficulty || 1)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeStr(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
+
+function startExercise(id, word, phoneme, lang) {
+  window.location.href = `/recording/?word=${encodeURIComponent(word)}&phoneme=${encodeURIComponent(phoneme)}&lang=${lang}&exercise_id=${id}&child_id=${currentChildId}`;
+}
+
+function goToPractice() {
+  showSection('practice', document.getElementById('tab-practice'));
+  if (allExercises.length === 0) loadExercises();
+}
+
+function filterPractice(lang, btn) {
+  currentLang = lang;
+  document.querySelectorAll('#prac-tab-english, #prac-tab-hindi').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadExercises();
+}
+
+function filterCategory(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll('.active-filter').forEach(b => {
+    b.classList.remove('active-filter', 'btn-primary');
+    b.classList.add('btn-ghost');
+  });
+  if (btn) {
+    btn.classList.add('active-filter', 'btn-primary');
+    btn.classList.remove('btn-ghost');
+  }
+  loadExercises();
+}
+
+function goToGamesSection() {
+  showSection('games', document.getElementById('tab-games'));
+  const gamesSec = document.getElementById('section-games');
+  if (gamesSec) gamesSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function goToGame(type) {
+  window.location.href = `/games/${type}/?child_id=${currentChildId}`;
+}
+
+// ── PROGRESS ─────────────────────────────────────────────
+async function loadProgress() {
+  try {
+    const res = await apiCall(`/api/progress/${currentChildId}`);
+    if (!res.success) return;
+
+    if (typeof renderProgressChart === 'function' && res.weekly_data) {
+      if (progressChart) { progressChart.destroy(); progressChart = null; }
+      progressChart = renderProgressChart('progressChart', res.weekly_data);
+    }
+
+    const tbody = document.getElementById('progress-sessions-body');
+    if (res.sessions && res.sessions.length > 0) {
+      tbody.innerHTML = res.sessions.slice(0, 15).map(s => `
+        <tr>
+          <td>${s.created_at ? s.created_at.split('T')[0] : 'Recent'}</td>
+          <td style="font-weight:700; color:var(--text);">${s.target_word || '—'}</td>
+          <td style="font-weight:900; color:${s.score >= 80 ? 'var(--success)' : s.score >= 55 ? 'var(--warning)' : 'var(--danger)'};">
+            ${Math.round(s.score)}%
+          </td>
+          <td style="max-width:220px; font-size:0.85rem;">${s.feedback || '—'}</td>
+          <td><span class="badge ${s.error_category === 'none' ? 'badge-score' : 'badge-warn'}">${s.error_category || 'none'}</span></td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No sessions yet. Start practicing! 🌸</td></tr>';
+    }
+  } catch(e) { console.warn('Progress error:', e); }
+}
+
+// ── REPORTS ──────────────────────────────────────────────
+async function loadReports() {
+  try {
+    const [progRes, uwRes] = await Promise.all([
+      apiCall(`/api/progress/${currentChildId}`),
+      apiCall(`/api/unique-words/${currentChildId}`)
+    ]);
+    if (!progRes.success) return;
+
+    const sessions = progRes.sessions || [];
+    const count    = sessions.length;
+    const avgScore = count > 0 ? Math.round(sessions.reduce((a, s) => a + s.score, 0) / count) : 0;
+    const clean    = sessions.filter(s => s.error_category === 'none').length;
+    const subs     = sessions.filter(s => s.error_category === 'substitution').length;
+    const dist     = sessions.filter(s => !['none','substitution'].includes(s.error_category || 'none')).length;
+    const grand    = clean + subs + dist || 1;
+
+    document.getElementById('rep-total-sessions').textContent = uwRes.unique_words || 0;
+    document.getElementById('rep-avg-score').textContent      = `${avgScore}%`;
+    document.getElementById('rep-duration').textContent       = count;
+    document.getElementById('count-clean').textContent = clean;
+    document.getElementById('count-subs').textContent  = subs;
+    document.getElementById('count-dist').textContent  = dist;
+    document.getElementById('bar-clean').style.width   = `${Math.round(clean/grand*100)}%`;
+    document.getElementById('bar-subs').style.width    = `${Math.round(subs/grand*100)}%`;
+    document.getElementById('bar-dist').style.width    = `${Math.round(dist/grand*100)}%`;
+
+    const tbody = document.getElementById('report-sessions-body');
+    if (sessions.length > 0) {
+      tbody.innerHTML = sessions.slice(0, 20).map(s => `
+        <tr>
+          <td>${s.created_at ? s.created_at.split('T')[0] : 'Recent'}</td>
+          <td style="font-weight:900; color:${s.score >= 80 ? 'var(--success)' : 'var(--warning)'};">${Math.round(s.score)}%</td>
+          <td style="font-weight:700;">${s.target_word || '—'}</td>
+          <td style="font-family:monospace; font-size:0.85rem;">${s.observed_phoneme || '—'}</td>
+          <td><span class="badge ${s.error_category === 'none' ? 'badge-score' : 'badge-warn'}">${s.error_category || 'none'}</span></td>
+          <td style="font-size:0.82rem; max-width:200px;">${s.feedback || '—'}</td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">No sessions yet.</td></tr>';
+    }
+  } catch(e) { console.warn('Reports error:', e); }
+}
+</script>
+{% endblock %}

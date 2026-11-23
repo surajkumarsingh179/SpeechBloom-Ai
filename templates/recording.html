@@ -1,0 +1,668 @@
+{% extends "base.html" %}
+{% block title %}Speech Practice Studio — SpeechBloom AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .quest-flow-card {
+    background: linear-gradient(135deg, rgba(220,20,60,0.12), rgba(255,215,0,0.08));
+    border: 1px solid rgba(220,20,60,0.3);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .quest-steps-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .quest-step-pill {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+  }
+  .quest-step-pill.active {
+    background: var(--bg-card-2);
+    border-color: var(--crimson);
+    color: var(--text);
+    box-shadow: 0 0 14px var(--crimson-glow);
+  }
+  .quest-step-pill.done {
+    background: rgba(34,197,94,0.08);
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  /* Posture Guide Styles */
+  .posture-container {
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    margin: 20px 0 28px;
+    text-align: left;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .posture-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .posture-diagram-box {
+    background: #050505;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .posture-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .posture-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .posture-card:hover {
+    border-color: var(--border-light);
+    transform: translateY(-1px);
+  }
+  .posture-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .posture-card-body {
+    font-size: 0.9rem;
+    color: var(--text-body);
+    font-weight: 600;
+    line-height: 1.45;
+  }
+  .coach-tip-box {
+    background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(220,20,60,0.08));
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Audio player buttons */
+  .audio-helpers-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* Celebration Modal */
+  .celebration-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+  }
+  .celebration-box {
+    background: var(--bg-card);
+    border: 2px solid var(--crimson);
+    border-radius: var(--radius-lg);
+    max-width: 480px;
+    width: 100%;
+    padding: 36px 28px;
+    text-align: center;
+    box-shadow: 0 0 50px var(--crimson-glow);
+    animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .celebration-stars {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    animation: floatStars 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes floatStars {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+  }
+  .btn-pulse {
+    animation: pulseGlow 1.8s infinite;
+  }
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(220,20,60,0.6); }
+    70% { box-shadow: 0 0 0 14px rgba(220,20,60,0); }
+    100% { box-shadow: 0 0 0 0 rgba(220,20,60,0); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Back Navigation -->
+<div style="margin-bottom:20px;">
+  <a href="javascript:navigateBack()" id="back-nav-link" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;">
+    ← Back to Hub
+  </a>
+</div>
+
+<div style="max-width:720px; margin:0 auto;">
+
+  <!-- Quest Progress Stepper (Active when in quest mode) -->
+  <div class="quest-flow-card" id="quest-flow-card" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.3rem;">⭐</span>
+        <h4 style="font-weight:900; color:var(--text); margin:0;" id="quest-header-title">Today's Speech Quest</h4>
+      </div>
+      <span class="badge badge-primary" id="quest-step-badge">Step 1 of 3</span>
+    </div>
+    <div class="quest-steps-row" id="quest-steps-row">
+      <!-- Populated dynamically: Butterfly ➜ Elephant ➜ Spoon -->
+    </div>
+  </div>
+
+  <!-- Studio Card -->
+  <div class="card" style="text-align:center; padding:36px 32px;">
+
+    <!-- Language + child badge -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
+      <span class="badge" id="rec-lang-badge" style="font-size:0.9rem; padding:6px 16px;">ENGLISH</span>
+      <div id="rec-child-badge" class="avatar-pill" style="display:none;">
+        <span id="rec-child-avatar">🧒</span>
+        <span id="rec-child-name">Child</span>
+      </div>
+    </div>
+
+    <!-- Target Word & Phoneme Bubble -->
+    <div class="word-target" id="target-word-display" style="font-size:3rem; font-weight:900; color:var(--text); letter-spacing:-0.02em;">—</div>
+    <div class="phoneme-bubble" id="target-phoneme-display" style="margin-bottom:12px; font-size:1.15rem;">Target Sound: —</div>
+    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:20px;" id="target-instructions">
+      Review the tongue posture below, then tap the microphone and speak clearly.
+    </p>
+
+    <!-- ── Interactive Tongue & Mouth Posture Guide ── -->
+    <div class="posture-container" id="posture-container">
+      <div class="posture-header-row">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.35rem;">👅</span>
+          <span style="font-weight:900; font-size:1.05rem; color:var(--text);">Tongue &amp; Mouth Posture Guide</span>
+        </div>
+        <span class="badge badge-primary" id="posture-place-tag">Bilabial Stop</span>
+      </div>
+
+      <!-- Anatomical Cross-Section SVG Visualizer -->
+      <div class="posture-diagram-box">
+        <div id="posture-svg-container" style="width:100%; max-width:210px;"></div>
+      </div>
+
+      <!-- 4-Pillar Posture Information Cards -->
+      <div class="posture-grid">
+        <div class="posture-card">
+          <div class="posture-card-header">
+            <span>👅</span> Tongue Position
+          </div>
+          <div class="posture-card-body" id="posture-tongue-text">
+            Resting relaxed and flat at the bottom of the mouth.
+          </div>
+        </div>
+
+        <div class="posture-card">
+          <div class="posture-card-header">
+            <span>👄</span> Lips &amp; Teeth
+          </div>
+          <div class="posture-card-body" id="posture-lips-text">
+            Press both lips firmly together, build air, and pop open.
+          </div>
+        </div>
+
+        <div class="posture-card">
+          <div class="posture-card-header">
+            <span>💨</span> Airflow
+          </div>
+          <div class="posture-card-body" id="posture-air-text">
+            A quick, energetic burst of air released forward.
+          </div>
+        </div>
+
+        <div class="posture-card">
+          <div class="posture-card-header">
+            <span>🔊</span> Voice Vibration
+          </div>
+          <div class="posture-card-body" id="posture-voice-text">
+            Voiced ⚡ — Vocal cords vibrate (feel your throat buzz!)
+          </div>
+        </div>
+      </div>
+
+      <!-- Speech Coach Action Tip -->
+      <div class="coach-tip-box" id="posture-tip-box">
+        <span style="font-size:1.3rem; flex-shrink:0;">💡</span>
+        <div id="posture-tip-text">
+          Press both lips together and make a gentle soap-bubble pop: b-b-butterfly! 🫧
+        </div>
+      </div>
+
+      <!-- Audio Reference Controls -->
+      <div class="audio-helpers-row">
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-hear-word" onclick="hearCurrentWord()">
+          🔊 Hear Word
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-hear-sound" onclick="hearCurrentSound()">
+          👂 Hear Isolated Sound /<span id="isolated-sound-label">b</span>/
+        </button>
+      </div>
+    </div>
+
+    <!-- Microphone Recording Section -->
+    <div style="margin:24px 0 16px;">
+      <button id="mic-btn" class="record-btn" title="Tap to start/stop recording">🎤</button>
+      <p id="mic-status" style="margin-top:16px; font-weight:800; color:var(--text-muted); font-size:0.95rem;">
+        Tap microphone to begin
+      </p>
+      <div id="live-heard-box" style="min-height:30px; font-weight:800; color:var(--crimson); margin-top:8px; font-size:1.05rem;"></div>
+    </div>
+
+    <!-- Results Panel (Revealed upon evaluation) -->
+    <div id="results-panel" style="display:none;" class="result-panel">
+      <div class="stars-container" id="stars-display" style="font-size:2.4rem; margin:14px 0;">⭐⭐⭐</div>
+
+      <div class="score-circle" id="score-circle">85%</div>
+
+      <!-- Phonetic Breakdown -->
+      <div style="background:var(--bg); border-radius:var(--radius-sm); padding:18px; margin:18px 0; text-align:left; border:1px solid var(--border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <div style="font-size:0.78rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Target Word</div>
+            <div style="font-weight:900; font-size:1.15rem;" id="res-target-word">—</div>
+            <div style="font-family:monospace; color:var(--text-muted); font-size:0.92rem;" id="res-target-ph">/—/</div>
+          </div>
+          <div>
+            <div style="font-size:0.78rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">What We Heard</div>
+            <div style="font-weight:900; font-size:1.15rem; color:var(--crimson);" id="res-heard-word">—</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.82rem; font-weight:700; color:var(--text-muted);">Articulation:</span>
+          <span id="res-error-cat" class="badge badge-score">—</span>
+        </div>
+      </div>
+
+      <!-- Feedback box -->
+      <div id="feedback-box" style="padding:18px; border-radius:var(--radius-sm); margin:18px 0; font-weight:700; font-size:1rem; line-height:1.6; background:var(--warning-light); color:#7C5304;">
+        <div id="feedback-text">Great effort!</div>
+      </div>
+
+      <!-- Engine tag -->
+      <div id="demo-tag" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:24px; padding:6px 14px; background:var(--bg); border-radius:var(--radius-full); display:inline-block; border:1px solid var(--border);">
+        🌸 SpeechBloom Phonetic Alignment &amp; Articulatory Engine
+      </div>
+
+      <!-- Action Navigation Buttons -->
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="resetPractice()">Try Again 🔄</button>
+        <button class="btn btn-primary btn-pulse" id="btn-next-action" onclick="onNextActionClicked()">Next Exercise ➡️</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Quest Celebration Modal -->
+<div class="celebration-overlay" id="quest-celebration-modal">
+  <div class="celebration-box">
+    <div class="celebration-stars">🌟🏆🌟</div>
+    <h2 style="font-weight:900; font-size:1.8rem; color:var(--text); margin-bottom:10px;">Quest Completed!</h2>
+    <p style="color:var(--text-muted); font-size:1rem; margin-bottom:20px; line-height:1.5;">
+      Superstar speech skills! You finished all 3 words in today's Speech Quest.
+    </p>
+
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:24px;">
+      <div style="font-size:1.2rem; font-weight:900; color:var(--gold); margin-bottom:6px;">+5 Bonus Stars Added! ⭐</div>
+      <div id="celebration-words-list" style="font-size:0.92rem; color:var(--text-body);">
+        🦋 Butterfly · 🐘 Elephant · 🥄 Spoon
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%; font-size:1.05rem; padding:14px;" onclick="closeCelebrationAndReturn()">
+      Claim Stars &amp; Return to Dashboard 🚀
+    </button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/audio.js"></script>
+<script src="/static/js/postures.js"></script>
+<script>
+// ── URL & CONTEXT PARAMS ──────────────────────────────────────
+const params           = new URLSearchParams(window.location.search);
+const targetWord       = params.get('word')     || 'Butterfly';
+const targetPhoneme    = params.get('phoneme')  || 'b';
+const targetLang       = params.get('lang')     || 'english';
+const exerciseId       = params.get('exercise_id') || null;
+const childIdParam     = params.get('child_id') || getSelectedChildId();
+const isQuest          = params.get('quest') === 'true';
+const questStep        = parseInt(params.get('step') || params.get('quest_idx') || '0', 10);
+const totalQuestSteps  = parseInt(params.get('total') || '3', 10);
+
+if (childIdParam) setSelectedChildId(childIdParam);
+
+let activeQuestList    = [];
+let currentPosture     = null;
+
+// ── SETUP PAGE ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Basic display
+  document.getElementById('target-word-display').textContent    = targetWord;
+  document.getElementById('target-phoneme-display').textContent = `Target Sound: /${targetPhoneme}/`;
+  document.getElementById('isolated-sound-label').textContent   = targetPhoneme;
+  document.getElementById('target-instructions').textContent    =
+    `Check the tongue & mouth posture below, then tap the microphone and say "${targetWord}".`;
+
+  // Language badge
+  const langBadge = document.getElementById('rec-lang-badge');
+  langBadge.textContent = targetLang === 'hindi' ? '🇮🇳 HINDI' : '🇬🇧 ENGLISH';
+  langBadge.className   = `badge ${targetLang === 'hindi' ? 'badge-hindi' : 'badge-english'}`;
+  langBadge.style.fontSize = '0.9rem';
+  langBadge.style.padding  = '6px 16px';
+
+  // Child badge
+  const cid = getSelectedChildId();
+  if (cid) {
+    document.getElementById('rec-child-badge').style.display = 'flex';
+    document.getElementById('rec-child-avatar').textContent   = getChildAvatar();
+    document.getElementById('rec-child-name').textContent     = getChildName();
+  }
+
+  // 2. Load Mouth & Tongue Posture Guide
+  loadTonguePostureGuide();
+
+  // 3. Setup Daily Quest Flow if active
+  if (isQuest) {
+    setupQuestStepper();
+  }
+});
+
+// ── TONGUE & MOUTH POSTURE GUIDE ─────────────────────────────
+function loadTonguePostureGuide() {
+  currentPosture = getPostureGuide(targetPhoneme, targetWord);
+
+  document.getElementById('posture-place-tag').textContent  = currentPosture.place;
+  document.getElementById('posture-tongue-text').textContent = currentPosture.tongue;
+  document.getElementById('posture-lips-text').textContent   = currentPosture.lips;
+  document.getElementById('posture-air-text').textContent    = currentPosture.airflow;
+  document.getElementById('posture-voice-text').textContent  = currentPosture.voice;
+  document.getElementById('posture-tip-text').textContent    = currentPosture.tip;
+
+  // Render SVG cross-section visualizer
+  renderPostureSVG(currentPosture.svgType, 'posture-svg-container');
+}
+
+function hearCurrentWord() {
+  speakWord(targetWord, targetLang);
+}
+
+function hearCurrentSound() {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const textToSpeak = currentPosture?.isolatedSound || targetPhoneme;
+  const utt = new SpeechSynthesisUtterance(textToSpeak);
+  utt.lang = targetLang === 'hindi' ? 'hi-IN' : 'en-US';
+  utt.rate = 0.72;
+  window.speechSynthesis.speak(utt);
+}
+
+// ── DAILY QUEST PROGRESSION ──────────────────────────────────
+function setupQuestStepper() {
+  const questCard = document.getElementById('quest-flow-card');
+  questCard.style.display = 'block';
+
+  const storedKey = 'speechbloom_daily_quest_' + (getSelectedChildId() || '');
+  try {
+    const raw = sessionStorage.getItem(storedKey);
+    if (raw) activeQuestList = JSON.parse(raw);
+  } catch(e) { console.warn('Quest storage parse error:', e); }
+
+  // Fallback defaults if list is empty
+  if (!activeQuestList || activeQuestList.length === 0) {
+    activeQuestList = [
+      { word: 'Butterfly', phoneme: 'b',  emoji: '🦋', lang: 'english' },
+      { word: 'Elephant',  phoneme: 'e',  emoji: '🐘', lang: 'english' },
+      { word: 'Spoon',     phoneme: 'sp', emoji: '🥄', lang: 'english' }
+    ];
+  }
+
+  const effectiveTotal = activeQuestList.length;
+  document.getElementById('quest-step-badge').textContent = `Word ${questStep + 1} of ${effectiveTotal}`;
+
+  const row = document.getElementById('quest-steps-row');
+  row.innerHTML = activeQuestList.map((item, idx) => {
+    let statusClass = '';
+    let icon = item.emoji || '🎯';
+    if (idx < questStep) {
+      statusClass = 'done';
+      icon = '✅';
+    } else if (idx === questStep) {
+      statusClass = 'active';
+    }
+    return `
+      <div class="quest-step-pill ${statusClass}">
+        <span style="font-size:1.2rem;">${icon}</span>
+        <div>
+          <div>${item.word}</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">/${item.phoneme}/</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── AUDIO RECORDING ──────────────────────────────────────────
+const recorder  = new AudioRecorder();
+const micBtn    = document.getElementById('mic-btn');
+const micStatus = document.getElementById('mic-status');
+const liveBox   = document.getElementById('live-heard-box');
+
+micBtn.addEventListener('click', async () => {
+  if (!recorder.isRecording) {
+    liveBox.textContent = '';
+    try {
+      await recorder.start(targetLang, (text) => {
+        liveBox.textContent = `Heard: "${text}"`;
+      });
+      micBtn.classList.add('recording');
+      micStatus.textContent = 'Listening… speak clearly, then tap again to evaluate!';
+      micStatus.style.color = 'var(--secondary)';
+    } catch (err) {
+      showToast('Microphone access needed: ' + err.message, 'warn');
+    }
+  } else {
+    micBtn.classList.remove('recording');
+    micStatus.textContent = 'Analyzing your articulation… 🌸';
+    micStatus.style.color = 'var(--crimson)';
+
+    const resultObj    = await recorder.stop();
+    const audioBlob    = resultObj ? resultObj.blob : null;
+    const capturedText = resultObj ? resultObj.transcript : '';
+
+    if (audioBlob) {
+      try {
+        const result = await uploadAndAnalyzeAudio(audioBlob, {
+          language: targetLang,
+          target_word: targetWord,
+          target_phoneme: targetPhoneme,
+          observed_transcript: capturedText,
+          child_id: getSelectedChildId() || ''
+        }, capturedText);
+
+        displayResult(result);
+        micStatus.textContent = 'Practice complete!';
+        micStatus.style.color = 'var(--success)';
+      } catch (err) {
+        micStatus.textContent = 'Error: ' + err.message;
+        micStatus.style.color = 'var(--danger)';
+      }
+    }
+  }
+});
+
+// ── DISPLAY RESULT & NEXT ACTIONS ────────────────────────────
+function displayResult(result) {
+  const panel = document.getElementById('results-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const score  = Math.round(result.score || 0);
+  const circle = document.getElementById('score-circle');
+  circle.textContent = `${score}%`;
+
+  if (score >= 80) {
+    circle.style.background = 'linear-gradient(135deg, var(--success), #2FAA47)';
+    document.getElementById('feedback-box').style.background = 'rgba(34,197,94,0.12)';
+    document.getElementById('feedback-box').style.color      = '#22C55E';
+  } else if (score >= 55) {
+    circle.style.background = 'linear-gradient(135deg, var(--warning), #E6A400)';
+    document.getElementById('feedback-box').style.background = 'rgba(245,158,11,0.12)';
+    document.getElementById('feedback-box').style.color      = '#F59E0B';
+  } else {
+    circle.style.background = 'linear-gradient(135deg, var(--danger), #C30000)';
+    document.getElementById('feedback-box').style.background = 'rgba(239,68,68,0.12)';
+    document.getElementById('feedback-box').style.color      = '#EF4444';
+  }
+
+  const starsCount = result.stars || (score >= 80 ? 3 : score >= 55 ? 2 : 1);
+  document.getElementById('stars-display').textContent    = '⭐'.repeat(starsCount) + '☆'.repeat(3 - starsCount);
+  document.getElementById('res-target-word').textContent  = targetWord;
+  document.getElementById('res-target-ph').textContent    = `/${targetPhoneme}/`;
+  document.getElementById('res-heard-word').textContent   = result.observed_transcript || '(acoustic match)';
+  document.getElementById('feedback-text').textContent    = result.feedback;
+
+  const errBadge = document.getElementById('res-error-cat');
+  if (result.error_category === 'none') {
+    errBadge.className   = 'badge badge-score';
+    errBadge.textContent = '✅ Clear Articulation';
+  } else if (result.error_category === 'substitution') {
+    errBadge.className   = 'badge badge-warn';
+    errBadge.textContent = `🔄 Substitution (${result.observed_phoneme || '?'})`;
+  } else {
+    errBadge.className   = 'badge badge-danger';
+    errBadge.textContent = `⚠️ ${(result.error_category || 'other').toUpperCase()}`;
+  }
+
+  // Update Next Action Button
+  const nextBtn = document.getElementById('btn-next-action');
+
+  if (isQuest && activeQuestList && activeQuestList.length > 0) {
+    // Mark current item complete in session storage
+    if (activeQuestList[questStep]) activeQuestList[questStep].completed = true;
+    const storedKey = 'speechbloom_daily_quest_' + (getSelectedChildId() || '');
+    sessionStorage.setItem(storedKey, JSON.stringify(activeQuestList));
+
+    if (questStep < activeQuestList.length - 1) {
+      const nextItem = activeQuestList[questStep + 1];
+      nextBtn.textContent = `Next: ${nextItem.emoji || '🎯'} ${nextItem.word} ➡️`;
+      nextBtn.className   = 'btn btn-primary btn-pulse';
+    } else {
+      nextBtn.textContent = '🎉 Finish Quest & Claim Stars! 🏆';
+      nextBtn.className   = 'btn btn-success btn-pulse';
+    }
+  } else {
+    nextBtn.textContent = 'Next Practice Word ➡️';
+    nextBtn.className   = 'btn btn-primary';
+  }
+}
+
+// ── NAVIGATION CONTROLLER ─────────────────────────────────────
+function onNextActionClicked() {
+  if (isQuest && activeQuestList && activeQuestList.length > 0) {
+    if (questStep < activeQuestList.length - 1) {
+      // Continue sequentially to next word (e.g. Butterfly -> Elephant -> Spoon)
+      const nextIndex = questStep + 1;
+      const nextItem  = activeQuestList[nextIndex];
+      const childId   = getSelectedChildId() || '';
+      window.location.href = `/recording/?word=${encodeURIComponent(nextItem.word)}&phoneme=${encodeURIComponent(nextItem.phoneme)}&lang=${nextItem.lang}&child_id=${childId}&quest=true&step=${nextIndex}&total=${activeQuestList.length}`;
+    } else {
+      // Final word completed -> Show celebratory modal
+      showQuestCelebration();
+    }
+  } else {
+    // General practice -> Return to practice hub or dashboard
+    navigateBack();
+  }
+}
+
+function showQuestCelebration() {
+  const modal = document.getElementById('quest-celebration-modal');
+  modal.style.display = 'flex';
+
+  if (activeQuestList && activeQuestList.length > 0) {
+    document.getElementById('celebration-words-list').textContent =
+      activeQuestList.map(w => `${w.emoji || '⭐'} ${w.word}`).join(' · ');
+  }
+}
+
+function closeCelebrationAndReturn() {
+  const childId = getSelectedChildId() || '';
+  window.location.href = `/dashboard/?child_id=${childId}`;
+}
+
+function navigateBack() {
+  const childId = getSelectedChildId() || '';
+  if (isQuest) {
+    window.location.href = `/dashboard/?child_id=${childId}`;
+  } else if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = `/dashboard/?child_id=${childId}`;
+  }
+}
+
+function resetPractice() {
+  document.getElementById('results-panel').style.display = 'none';
+  micStatus.textContent = 'Tap microphone to begin';
+  micStatus.style.color = 'var(--text-muted)';
+  liveBox.textContent   = '';
+}
+</script>
+{% endblock %}

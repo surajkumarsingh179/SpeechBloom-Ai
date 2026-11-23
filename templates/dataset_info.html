@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Datasets & Model Ethics{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 20px auto;">
+  <div class="card">
+    <h2 style="color: var(--primary); margin-bottom: 16px;">Research Datasets & ML Specification 📊</h2>
+    <p style="margin-bottom: 20px; color: var(--text-muted);">
+      Transparency on training requirements, public research datasets, and annotation specifications.
+    </p>
+
+    <div class="card" style="background: #F8F9FF; margin-bottom: 24px;">
+      <h3 style="color: var(--primary);">Public Dataset Investigation</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem;">
+        <thead>
+          <tr style="border-bottom: 2px solid #EAEBFA; text-align: left;">
+            <th style="padding: 8px;">Dataset</th>
+            <th style="padding: 8px;">Domain</th>
+            <th style="padding: 8px;">Suitability & Limitation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #ECEEFA;">
+            <td style="padding: 8px;"><strong>Speech Accent Archive</strong></td>
+            <td style="padding: 8px;">Global English Accents</td>
+            <td style="padding: 8px;">Accent research; not pediatric clinical labels.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ECEEFA;">
+            <td style="padding: 8px;"><strong>Mozilla Common Voice</strong></td>
+            <td style="padding: 8px;">Multilingual ASR</td>
+            <td style="padding: 8px;">Adult crowd-sourced; lacks pediatric articulation differences.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ECEEFA;">
+            <td style="padding: 8px;"><strong>Google FLEURS</strong></td>
+            <td style="padding: 8px;">Multilingual Speech</td>
+            <td style="padding: 8px;">Language ID & ASR; not articulation disorder dataset.</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px;"><strong>AI4Bharat</strong></td>
+            <td style="padding: 8px;">Indian Languages</td>
+            <td style="padding: 8px;">High-value for Hindi acoustics; adult benchmark.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color: var(--secondary); margin-bottom: 12px;">Standard Annotation Schema</h3>
+    <pre style="background: #2D3436; color: #FFF; padding: 16px; border-radius: var(--radius-sm); overflow-x: auto; font-size: 0.85rem;">
+audio_path,speaker_id,language,target_word,transcript,target_phoneme,observed_phoneme,error_category,accent,age_group,annotator_id
+datasets/raw/english/s1.wav,SPK001,english,Red,Red,r,w,substitution,general_indian,5-7,SLP_01
+datasets/raw/hindi/s2.wav,SPK002,hindi,राम,राम,र,ल,substitution,standard_hindi,5-7,SLP_02
+    </pre>
+  </div>
+</div>
+{% endblock %}

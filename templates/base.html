@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SpeechBloom AI{% endblock %} — Speech Practice for Children</title>
+  <meta name="description" content="AI-powered multilingual speech practice for children in Hindi and English.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block extra_css %}{% endblock %}
+  <style>
+    body { opacity: 0; transition: opacity 0.2s ease; }
+    body.loaded { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <header class="navbar">
+    <div class="nav-container">
+
+      <a href="/" class="nav-brand">
+        <span class="brand-icon">🌸</span>SpeechBloom AI
+      </a>
+
+      <button class="nav-burger" id="nav-burger" aria-label="Toggle navigation" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect y="3"  width="22" height="2.5" rx="1.25" fill="currentColor"/>
+          <rect y="10" width="22" height="2.5" rx="1.25" fill="currentColor"/>
+          <rect y="17" width="22" height="2.5" rx="1.25" fill="currentColor"/>
+        </svg>
+      </button>
+
+      {% if not is_logged_in %}
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/login/"    class="btn btn-outline btn-sm">Sign In</a></li>
+        <li><a href="/register/" class="btn btn-primary btn-sm">Get Started</a></li>
+      </ul>
+
+      {% else %}
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/profile/">My Children</a></li>
+        {% if role == 'parent' %}
+          <li><a href="/parent/">Dashboard</a></li>
+        {% endif %}
+        <li><a href="/about/">About</a></li>
+        <li><a href="/logout/" class="btn btn-outline btn-sm">Sign Out</a></li>
+      </ul>
+
+      <a href="/profile/" class="nav-child-badge" id="nav-child-badge" style="display:none;">
+        <span class="avatar">🧒</span>
+        <span class="child-name">Child</span>
+        <span style="color:var(--text-dim);font-size:0.72rem;margin-left:2px;">▾</span>
+      </a>
+      {% endif %}
+
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <p style="font-weight:900; color:var(--crimson); font-size:1rem; margin-bottom:8px;">🌸 SpeechBloom AI</p>
+    <p style="color:var(--text-dim);">AI-powered speech practice for children · Hindi &amp; English</p>
+    <p style="margin-top:10px;">
+      <a href="/about/">About</a>
+      {% if is_logged_in %}
+        <a href="/parent/">Dashboard</a>
+        <a href="/logout/">Sign Out</a>
+      {% else %}
+        <a href="/register/">Sign Up</a>
+        <a href="/login/">Sign In</a>
+      {% endif %}
+    </p>
+    <p style="margin-top:16px; font-size:0.78rem; color:var(--text-dim);">© 2026 SpeechBloom AI</p>
+  </footer>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/js/main.js"></script>
+  {% block extra_js %}{% endblock %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.classList.add('loaded');
+      {% if not is_logged_in %}
+        if (typeof clearSelectedChild === 'function') clearSelectedChild();
+      {% endif %}
+    });
+  </script>
+</body>
+</html>

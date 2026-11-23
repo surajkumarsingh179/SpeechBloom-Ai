@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Progress{% endblock %}
+
+{% block content %}
+{% if not is_logged_in %}
+  <div style="max-width:520px;margin:60px auto;text-align:center;">
+    <div class="card" style="padding:52px 32px;">
+      <span style="font-size:3.5rem;display:block;margin-bottom:16px;">📈</span>
+      <h2 style="font-size:1.5rem;font-weight:900;margin-bottom:12px;">Sign In to View Progress</h2>
+      <p style="color:var(--text-muted);margin-bottom:28px;">Track your child's phoneme accuracy and practice history.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <a href="/login/" class="btn btn-primary">Sign In</a>
+        <a href="/register/" class="btn btn-outline">Create Account</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div style="text-align:center;padding:60px 20px;">
+    <span style="font-size:3rem;display:block;margin-bottom:16px;" id="redir-icon">📈</span>
+    <p style="color:var(--text-muted);font-size:1.05rem;" id="redir-msg">Opening progress view…</p>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const childId = getSelectedChildId();
+      if (childId) {
+        window.location.href = `/dashboard/?child_id=${childId}#progress`;
+      } else {
+        document.getElementById('redir-msg').textContent = 'Please select a child profile first.';
+        document.getElementById('redir-icon').textContent = '🧒';
+        setTimeout(() => { window.location.href = '/profile/'; }, 1200);
+      }
+    });
+  </script>
+{% endif %}
+{% endblock %}

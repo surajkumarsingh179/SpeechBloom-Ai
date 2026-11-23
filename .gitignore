@@ -1,0 +1,29 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Environment Variables & Secrets
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Database
+*.sqlite3
+speechbloom.db
+
+# Static & Upload files generated in runtime
+staticfiles/
+uploads/
+*.wav
+
+# IDE / Editor configs
+.vscode/
+.idea/
+.DS_Store
+.kiro/

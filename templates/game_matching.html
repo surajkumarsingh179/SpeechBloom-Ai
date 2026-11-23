@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Sound Matching{% endblock %}
+
+{% block content %}
+
+<a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;margin-bottom:24px;">
+  ← Back to Games
+</a>
+
+<div style="max-width:600px; margin:0 auto; text-align:center;">
+  <div class="card" style="padding:36px 32px;">
+
+    <span style="font-size:2.8rem;display:block;margin-bottom:12px;">🎵</span>
+    <h3 style="font-size:1.4rem;font-weight:900;color:var(--accent);margin-bottom:8px;">Sound Matching</h3>
+    <p style="color:var(--text-muted);margin-bottom:24px;">Which word starts with the target sound?</p>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+      <div class="phoneme-bubble" id="match-sound" style="font-size:1.6rem;padding:10px 28px;">Sound: /r/</div>
+      <button class="btn btn-ghost btn-sm" onclick="speakWord(currentRound.target,'english')">🔊 Hear Sound</button>
+    </div>
+
+    <div class="grid-2" style="gap:14px;" id="options-grid"></div>
+
+    <div id="match-feedback" style="margin-top:20px;font-weight:800;font-size:1.1rem;min-height:32px;"></div>
+
+    <button id="next-btn" class="btn btn-primary" style="display:none;margin-top:16px;" onclick="nextRound()">
+      Next Round ➡️
+    </button>
+
+    <div style="margin-top:24px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);">
+      <span style="font-size:0.85rem;color:var(--text-muted);font-weight:700;">Score: </span>
+      <span id="score-display" style="font-weight:900;color:var(--primary);">0 / 0</span>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const rounds = [
+  { target: 'r', sound: '/r/', options: [
+      { text: '🔴 Red',   correct: true  },
+      { text: '🐱 Cat',   correct: false },
+      { text: '☀️ Sun',   correct: false },
+      { text: '🐟 Fish',  correct: false },
+  ]},
+  { target: 's', sound: '/s/', options: [
+      { text: '☀️ Sun',   correct: true  },
+      { text: '🐘 Elephant', correct: false },
+      { text: '🐰 Rabbit',correct: false },
+      { text: '🦁 Lion',  correct: false },
+  ]},
+  { target: 'f', sound: '/f/', options: [
+      { text: '🐟 Fish',  correct: true  },
+      { text: '🐱 Cat',   correct: false },
+      { text: '🔴 Red',   correct: false },
+      { text: '☀️ Sun',   correct: false },
+  ]},
+  { target: 'l', sound: '/l/', options: [
+      { text: '🦁 Lion',  correct: true  },
+      { text: '🐟 Fish',  correct: false },
+      { text: '☀️ Sun',   correct: false },
+      { text: '🐱 Cat',   correct: false },
+  ]},
+];
+
+let roundIdx  = 0;
+let correct   = 0;
+let total     = 0;
+let answered  = false;
+
+let currentRound = rounds[0];
+
+function renderRound() {
+  answered = false;
+  currentRound = rounds[roundIdx % rounds.length];
+  document.getElementById('match-sound').textContent = `Sound: ${currentRound.sound}`;
+  document.getElementById('match-feedback').textContent = '';
+  document.getElementById('next-btn').style.display = 'none';
+
+  // Shuffle options
+  const opts = [...currentRound.options].sort(() => Math.random() - 0.5);
+  document.getElementById('options-grid').innerHTML = opts.map(opt => `
+    <button
+      class="btn btn-outline"
+      style="font-size:1.1rem;padding:14px;border-radius:var(--radius-sm);"
+      onclick="checkOption(${opt.correct}, this)">
+      ${opt.text}
+    </button>`).join('');
+}
+
+function checkOption(isCorrect, btn) {
+  if (answered) return;
+  answered = true;
+  total++;
+
+  const fb = document.getElementById('match-feedback');
+  if (isCorrect) {
+    correct++;
+    btn.style.background   = 'var(--success-light)';
+    btn.style.borderColor  = 'var(--success)';
+    btn.style.color        = '#237C37';
+    fb.innerHTML           = '🎉 Correct! That starts with the right sound! ⭐⭐⭐';
+    fb.style.color         = 'var(--success)';
+  } else {
+    btn.style.background   = 'var(--danger-light)';
+    btn.style.borderColor  = 'var(--danger)';
+    btn.style.color        = '#C41E3A';
+    fb.innerHTML           = 'Good try! Listen closely and pick the matching sound. 🌸';
+    fb.style.color         = 'var(--secondary)';
+  }
+
+  document.getElementById('score-display').textContent = `${correct} / ${total}`;
+  document.getElementById('next-btn').style.display    = 'inline-flex';
+}
+
+function nextRound() {
+  roundIdx++;
+  renderRound();
+}
+
+renderRound();
+</script>
+{% endblock %}

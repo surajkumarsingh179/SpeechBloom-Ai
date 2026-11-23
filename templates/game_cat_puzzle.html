@@ -1,0 +1,955 @@
+{% extends "base.html" %}
+{% block title %}Dancing Cat Sound Puzzle — SpeechBloom AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .game-container {
+    max-width: 780px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+  /* Music control bar */
+  .music-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  /* Cat Stage Arena */
+  .cat-stage {
+    background: radial-gradient(circle at center, #1c1c28 0%, #0d0d12 100%);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    margin-bottom: 24px;
+    min-height: 290px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Confetti and floating notes container */
+  .effects-layer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .floating-note {
+    position: absolute;
+    font-size: 1.8rem;
+    animation: floatUp 2s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(80px) rotate(0deg); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: translateY(-60px) rotate(25deg); opacity: 0; }
+  }
+
+  /* Cat SVG Animations */
+  .cat-mascot-box {
+    width: 200px;
+    height: 190px;
+    position: relative;
+    transition: transform 0.3s ease;
+  }
+
+  /* 1. Dancing Animation */
+  .cat-dancing {
+    animation: catDance 0.65s infinite alternate ease-in-out;
+  }
+  @keyframes catDance {
+    0% {
+      transform: translateY(0) rotate(-6deg) scale(1.05);
+    }
+    100% {
+      transform: translateY(-16px) rotate(6deg) scale(1.1);
+    }
+  }
+  .cat-dancing .cat-tail {
+    animation: tailWagFast 0.35s infinite alternate ease-in-out;
+  }
+  .cat-dancing .cat-paw-left {
+    animation: pawDanceLeft 0.5s infinite alternate ease-in-out;
+  }
+  .cat-dancing .cat-paw-right {
+    animation: pawDanceRight 0.5s infinite alternate ease-in-out 0.25s;
+  }
+  @keyframes pawDanceLeft {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-18px) rotate(-20deg); }
+  }
+  @keyframes pawDanceRight {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-18px) rotate(20deg); }
+  }
+  @keyframes tailWagFast {
+    0% { transform: rotate(-30deg); }
+    100% { transform: rotate(35deg); }
+  }
+
+  /* 2. Happy Animation */
+  .cat-happy {
+    animation: catPurr 1.2s infinite ease-in-out;
+  }
+  @keyframes catPurr {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04) translateY(-4px); }
+  }
+  .cat-happy .cat-tail {
+    animation: tailWagGentle 1.2s infinite alternate ease-in-out;
+  }
+  @keyframes tailWagGentle {
+    0% { transform: rotate(-10deg); }
+    100% { transform: rotate(15deg); }
+  }
+
+  /* 3. Sad Animation */
+  .cat-sad {
+    animation: catDroop 2s infinite ease-in-out;
+  }
+  @keyframes catDroop {
+    0%, 100% { transform: translateY(4px) scale(0.97); }
+    50% { transform: translateY(8px) scale(0.95); }
+  }
+  .cat-sad .cat-ear-left {
+    transform: rotate(-18deg);
+  }
+  .cat-sad .cat-ear-right {
+    transform: rotate(18deg);
+  }
+
+  /* Cat speech bubble */
+  .cat-bubble {
+    background: #FFF;
+    color: #111;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 10px 18px;
+    border-radius: 20px;
+    margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    position: relative;
+    max-width: 380px;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+  }
+  .cat-bubble::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 8px 8px 8px;
+    border-style: solid;
+    border-color: transparent transparent #FFF transparent;
+  }
+
+  /* Puzzle Workspace */
+  .puzzle-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .puzzle-image-preview {
+    font-size: 4rem;
+    margin-bottom: 8px;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    60% { transform: translateY(-4px); }
+  }
+  .puzzle-word-slots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 20px;
+    flex-wrap: wrap;
+  }
+  .word-slot {
+    width: 48px;
+    height: 56px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card-2);
+    border: 2px solid var(--border);
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+  }
+  .word-slot.missing {
+    border: 2px dashed var(--crimson);
+    background: rgba(220,20,60,0.1);
+    color: var(--crimson);
+    cursor: pointer;
+    animation: slotGlow 1.5s infinite alternate;
+  }
+  @keyframes slotGlow {
+    0% { box-shadow: 0 0 4px var(--crimson); }
+    100% { box-shadow: 0 0 14px var(--crimson-glow); }
+  }
+  .word-slot.filled {
+    border: 2px solid var(--success);
+    background: rgba(34,197,94,0.12);
+    color: var(--success);
+  }
+
+  /* Puzzle Pieces Choices */
+  .puzzle-pieces-pool {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+  .puzzle-piece {
+    background: linear-gradient(135deg, var(--bg-card-2), var(--bg-card-3));
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .puzzle-piece:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 14px rgba(255,215,0,0.25);
+  }
+  .puzzle-piece.selected {
+    border-color: var(--success);
+    background: rgba(34,197,94,0.15);
+    color: var(--success);
+  }
+
+  /* Mic and action buttons */
+  .speak-btn-glow {
+    font-size: 1.15rem;
+    padding: 14px 32px;
+    font-weight: 900;
+    border-radius: var(--radius-full);
+  }
+  .speak-btn-glow.recording {
+    background: #EF4444 !important;
+    animation: micPulse 1s infinite;
+  }
+  @keyframes micPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+    70% { box-shadow: 0 0 0 16px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Back Navigation -->
+<div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+  <a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;">
+    ← Back to Games
+  </a>
+  <span class="badge badge-primary">✨ The Dancing Cat Puzzle</span>
+</div>
+
+<div class="game-container">
+
+  <!-- Music Toolbar -->
+  <div class="music-toolbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="btn btn-ghost btn-sm" id="btn-toggle-music" onclick="toggleBackgroundMusic()">
+        🎵 Music: <span id="music-state-text" style="color:var(--success); font-weight:900;">ON</span>
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="playCatMeow()">
+        🐱 Hear Cat
+      </button>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span style="font-weight:800; font-size:0.88rem; color:var(--text-muted);">Puzzles Solved: <strong id="score-counter" style="color:var(--gold);">0 / 6</strong></span>
+      <span class="badge badge-score" id="stars-badge">0 ⭐</span>
+    </div>
+  </div>
+
+  <!-- ── CAT STAGE ARENA ── -->
+  <div class="cat-stage" id="cat-stage-box">
+    <!-- Floating Musical Notes / Confetti Layer -->
+    <div class="effects-layer" id="effects-layer"></div>
+
+    <!-- Cat SVG Mascot -->
+    <div class="cat-mascot-box" id="cat-mascot">
+      <svg viewBox="0 0 200 200" width="100%" height="100%" id="cat-svg">
+        <defs>
+          <linearGradient id="catFur" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF9F43"/>
+            <stop offset="100%" stop-color="#EE5253"/>
+          </linearGradient>
+          <linearGradient id="catCheek" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF6B6B" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#FF6B6B" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Tail -->
+        <path class="cat-tail" d="M 50 140 Q 20 120 25 90 Q 28 80 40 85 Q 48 90 45 110 Q 42 125 65 145" fill="#EE5253" stroke="#D63031" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Body -->
+        <ellipse cx="100" cy="140" rx="42" ry="34" fill="url(#catFur)" stroke="#D63031" stroke-width="3"/>
+
+        <!-- Belly -->
+        <ellipse cx="100" cy="145" rx="26" ry="20" fill="#FFF" opacity="0.85"/>
+
+        <!-- Left Paw -->
+        <ellipse class="cat-paw-left" cx="72" cy="165" rx="12" ry="9" fill="#FFF" stroke="#D63031" stroke-width="2.5"/>
+
+        <!-- Right Paw -->
+        <ellipse class="cat-paw-right" cx="128" cy="165" rx="12" ry="9" fill="#FFF" stroke="#D63031" stroke-width="2.5"/>
+
+        <!-- Left Ear -->
+        <polygon class="cat-ear-left" points="62,70 82,32 96,65" fill="#EE5253" stroke="#D63031" stroke-width="3"/>
+        <polygon points="68,68 82,42 92,65" fill="#FFB8B8"/>
+
+        <!-- Right Ear -->
+        <polygon class="cat-ear-right" points="104,65 118,32 138,70" fill="#EE5253" stroke="#D63031" stroke-width="3"/>
+        <polygon points="108,65 118,42 132,68" fill="#FFB8B8"/>
+
+        <!-- Head -->
+        <circle cx="100" cy="90" r="38" fill="url(#catFur)" stroke="#D63031" stroke-width="3"/>
+
+        <!-- Cheeks -->
+        <circle cx="75" cy="100" r="9" fill="url(#catCheek)"/>
+        <circle cx="125" cy="100" r="9" fill="url(#catCheek)"/>
+
+        <!-- Whiskers -->
+        <line x1="50" y1="92" x2="72" y2="95" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+        <line x1="48" y1="102" x2="72" y2="101" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+        <line x1="128" y1="95" x2="150" y2="92" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+        <line x1="128" y1="101" x2="152" y2="102" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Nose -->
+        <polygon points="96,96 104,96 100,102" fill="#D63031"/>
+
+        <!-- Dynamic Eyes & Mouth (Rendered based on emotion) -->
+        <g id="cat-face-features">
+          <!-- Default happy blinking eyes -->
+          <circle cx="85" cy="85" r="5" fill="#222"/>
+          <circle cx="87" cy="83" r="1.8" fill="#FFF"/>
+          <circle cx="115" cy="85" r="5" fill="#222"/>
+          <circle cx="117" cy="83" r="1.8" fill="#FFF"/>
+          <!-- Mouth -->
+          <path d="M 94 103 Q 100 108 106 103" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+
+        <!-- Party Sunglasses (Visible during Dance) -->
+        <g id="cat-sunglasses" style="display:none;">
+          <rect x="70" y="76" width="26" height="18" rx="5" fill="#111" stroke="#FFD700" stroke-width="2"/>
+          <rect x="104" y="76" width="26" height="18" rx="5" fill="#111" stroke="#FFD700" stroke-width="2"/>
+          <line x1="96" y1="83" x2="104" y2="83" stroke="#FFD700" stroke-width="3"/>
+          <line x1="72" y1="80" x2="88" y2="90" stroke="#FFF" stroke-width="1.5" opacity="0.6"/>
+          <line x1="106" y1="80" x2="122" y2="90" stroke="#FFF" stroke-width="1.5" opacity="0.6"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Speech Bubble -->
+    <div class="cat-bubble" id="cat-bubble-text">
+      "Meow! Complete the sound puzzle below and say the word to make me dance!" 🐱🎵
+    </div>
+  </div>
+
+  <!-- ── SOUND PUZZLE WORKSPACE ── -->
+  <div class="puzzle-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <span class="badge badge-primary" id="puzzle-theme-badge">Puzzle 1 · Animals</span>
+      <span class="badge badge-outline" id="puzzle-lang-badge">🇬🇧 English</span>
+    </div>
+
+    <!-- Puzzle Target Icon -->
+    <div class="puzzle-image-preview" id="puzzle-emoji">🐱</div>
+    <div style="font-size:0.9rem; color:var(--text-muted); font-weight:700;" id="puzzle-clue">
+      Clue: It purrs, plays with yarn, and loves milk!
+    </div>
+
+    <!-- Word Slots with Missing Piece -->
+    <div class="puzzle-word-slots" id="puzzle-slots-container">
+      <!-- Generated via JS: [ _ ] [ A ] [ T ] -->
+    </div>
+
+    <!-- Puzzle Pieces Choices -->
+    <div style="margin:16px 0 6px;">
+      <div style="font-size:0.85rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">
+        Tap the missing sound piece:
+      </div>
+      <div class="puzzle-pieces-pool" id="puzzle-pieces-container">
+        <!-- Choices generated via JS -->
+      </div>
+    </div>
+
+    <!-- Tongue Posture Hint Pill -->
+    <div id="puzzle-posture-pill" style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; background:var(--bg-card-2); border:1px solid var(--border); border-radius:var(--radius-full); font-size:0.85rem; font-weight:800; color:var(--text); margin:12px 0 20px;">
+      <span>👅 Tongue Hint:</span> <span id="puzzle-posture-text" style="color:var(--crimson);">Pop back of tongue for /k/!</span>
+    </div>
+
+    <!-- Mic Recording & Action Area -->
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary speak-btn-glow" id="btn-puzzle-mic" onclick="togglePuzzleRecording()">
+        🎤 Speak Word to Cat!
+      </button>
+      <div id="puzzle-heard-status" style="min-height:24px; font-weight:800; color:var(--text); margin-top:12px; font-size:1rem;">
+        Snap the puzzle piece, then tap microphone and speak clearly.
+      </div>
+    </div>
+
+    <!-- Evaluation Results Bar -->
+    <div id="puzzle-result-box" style="display:none; margin-top:20px; padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg);">
+      <div style="display:flex; justify-content:space-around; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:0.8rem; color:var(--text-muted); font-weight:700;">Pronunciation Score:</span>
+          <div style="font-size:1.8rem; font-weight:900;" id="puzzle-score-display">92%</div>
+        </div>
+        <div>
+          <span style="font-size:0.8rem; color:var(--text-muted); font-weight:700;">Cat Reaction:</span>
+          <div style="font-size:1.3rem; font-weight:900;" id="puzzle-reaction-label">💃 Grooving!</div>
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="loadNextPuzzle()">Next Puzzle 🧩 ➡️</button>
+        </div>
+      </div>
+      <div id="puzzle-feedback-text" style="margin-top:10px; font-size:0.92rem; font-weight:700; color:var(--text-body);">
+        Awesome articulation!
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/audio.js"></script>
+<script src="/static/js/postures.js"></script>
+<script>
+// ── PUZZLE DATA SET ───────────────────────────────────────────
+const PUZZLE_LEVELS = [
+  {
+    word: 'CAT',
+    phoneme: 'k',
+    lang: 'english',
+    emoji: '🐱',
+    clue: 'It purrs, chases mice, and loves to dance!',
+    slots: ['_ ', 'A', 'T'],
+    missingIndex: 0,
+    missingPiece: 'C',
+    choices: ['C', 'B', 'M'],
+    posture: 'Back of tongue presses soft roof of mouth and pops: k-k-cat! 🐱'
+  },
+  {
+    word: 'SUN',
+    phoneme: 's',
+    lang: 'english',
+    emoji: '☀️',
+    clue: 'Bright, warm, and shines in the blue sky!',
+    slots: ['_ ', 'U', 'N'],
+    missingIndex: 0,
+    missingPiece: 'S',
+    choices: ['S', 'L', 'T'],
+    posture: 'Teeth close together, blow a steady hiss like a snake: sssss-un! 🐍'
+  },
+  {
+    word: 'SPOON',
+    phoneme: 'sp',
+    lang: 'english',
+    emoji: '🥄',
+    clue: 'Used to eat delicious warm soup and cereal!',
+    slots: ['_ ', 'P', 'O', 'O', 'N'],
+    missingIndex: 0,
+    missingPiece: 'S',
+    choices: ['S', 'B', 'F'],
+    posture: 'Start with hiss /s/, then pop lips together for /p/: sp-sp-spoon! 🥄'
+  },
+  {
+    word: 'BALL',
+    phoneme: 'b',
+    lang: 'english',
+    emoji: '⚽',
+    clue: 'Round toy you bounce and kick into the goal!',
+    slots: ['_ ', 'A', 'L', 'L'],
+    missingIndex: 0,
+    missingPiece: 'B',
+    choices: ['B', 'D', 'P'],
+    posture: 'Press both lips firmly together, build air, and pop open: b-b-ball! 🫧'
+  },
+  {
+    word: 'LION',
+    phoneme: 'l',
+    lang: 'english',
+    emoji: '🦁',
+    clue: 'The king of the jungle with a golden mane!',
+    slots: ['_ ', 'I', 'O', 'N'],
+    missingIndex: 0,
+    missingPiece: 'L',
+    choices: ['L', 'R', 'W'],
+    posture: 'Touch tongue tip firmly to bumpy ridge behind upper teeth: llll-ion! 🦁'
+  },
+  {
+    word: 'कमल',
+    phoneme: 'क',
+    lang: 'hindi',
+    emoji: '🪷',
+    clue: 'सुंदर राष्ट्रीय फूल जो पानी में खिलता है!',
+    slots: ['_ ', 'म', 'ल'],
+    missingIndex: 0,
+    missingPiece: 'क',
+    choices: ['क', 'त', 'च'],
+    posture: 'गले के पिछले हिस्से से साफ आवाज निकालिए: क-क-कमल! 🪷'
+  },
+  {
+    word: 'सूरज',
+    phoneme: 'स',
+    lang: 'hindi',
+    emoji: '☀️',
+    clue: 'जो सुबह हमें रोशनी और धूप देता है!',
+    slots: ['_ ', 'र', 'ज'],
+    missingIndex: 0,
+    missingPiece: 'स',
+    choices: ['स', 'ल', 'श'],
+    posture: 'दांतों के पीछे से सीटी जैसी धीमी हवा निकालिए: स-स-सूरज! ☀️'
+  },
+  {
+    word: 'पानी',
+    phoneme: 'प',
+    lang: 'hindi',
+    emoji: '💧',
+    clue: 'जिसे हम प्यास लगने पर पीते हैं!',
+    slots: ['_ ', 'न', 'ी'],
+    missingIndex: 0,
+    missingPiece: 'प',
+    choices: ['प', 'फ', 'ब'],
+    posture: 'दोनों होंठों को मिलाकर खोलिए: प-प-पानी! 💧'
+  }
+];
+
+let currentPuzzleIdx   = 0;
+let isPieceSnapped     = false;
+let solvedCount        = 0;
+let starsEarned        = 0;
+let musicAudioCtx      = null;
+let musicPlaying       = false;
+let musicTimer         = null;
+
+// Audio recorder
+const puzzleRecorder = new AudioRecorder();
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadPuzzle(currentPuzzleIdx);
+  // Auto-start playful background music after first user interaction
+  document.addEventListener('click', initAudioContextOnce, { once: true });
+});
+
+function initAudioContextOnce() {
+  startBackgroundMusic();
+}
+
+// ── LOAD PUZZLE ───────────────────────────────────────────────
+function loadPuzzle(idx) {
+  const p = PUZZLE_LEVELS[idx % PUZZLE_LEVELS.length];
+  isPieceSnapped = false;
+
+  document.getElementById('puzzle-emoji').textContent         = p.emoji;
+  document.getElementById('puzzle-clue').textContent          = `Clue: ${p.clue}`;
+  document.getElementById('puzzle-theme-badge').textContent   = `Puzzle ${idx + 1} of ${PUZZLE_LEVELS.length}`;
+  document.getElementById('puzzle-lang-badge').textContent    = p.lang === 'hindi' ? '🇮🇳 Hindi' : '🇬🇧 English';
+  document.getElementById('puzzle-posture-text').textContent  = p.posture;
+  document.getElementById('puzzle-heard-status').textContent  = 'Pick the missing sound piece to complete the word!';
+  document.getElementById('puzzle-result-box').style.display  = 'none';
+
+  setCatState('idle', `"Meow! Can you help me find the missing sound piece for ${p.emoji}?"`);
+
+  // Render slots
+  const slotsBox = document.getElementById('puzzle-slots-container');
+  slotsBox.innerHTML = p.slots.map((char, i) => {
+    if (i === p.missingIndex) {
+      return `<div class="word-slot missing" id="missing-slot">?</div>`;
+    }
+    return `<div class="word-slot">${char}</div>`;
+  }).join('');
+
+  // Render pieces
+  const piecesBox = document.getElementById('puzzle-pieces-container');
+  piecesBox.innerHTML = p.choices.map(c => `
+    <button class="puzzle-piece" onclick="snapPiece('${c}')">${c}</button>
+  `).join('');
+}
+
+// ── SNAP PUZZLE PIECE ─────────────────────────────────────────
+function snapPiece(selectedChar) {
+  const p = PUZZLE_LEVELS[currentPuzzleIdx % PUZZLE_LEVELS.length];
+  const slot = document.getElementById('missing-slot');
+  if (!slot) return;
+
+  if (selectedChar === p.missingPiece) {
+    slot.textContent = selectedChar;
+    slot.className   = 'word-slot filled';
+    isPieceSnapped   = true;
+
+    // Happy purr sound
+    playMelodicNote(587.33, 0.25); // D5
+    setTimeout(() => playMelodicNote(880.00, 0.35), 180); // A5
+
+    setCatState('happy', `"Purrfect! Now tap the microphone and say '${p.word}' to make me dance!" 🐱🎤`);
+    document.getElementById('puzzle-heard-status').innerHTML =
+      `Great piece! Now tap <strong>"Speak Word to Cat"</strong> and say <strong>"${p.word}"</strong>!`;
+  } else {
+    // Gentle wobble
+    slot.style.animation = 'catDroop 0.4s';
+    setTimeout(() => slot.style.animation = '', 400);
+    setCatState('sad', `"Hmm, not that one! Try another piece for ${p.emoji}!" 🐾`);
+  }
+}
+
+// ── RECORDING & EVALUATION ───────────────────────────────────
+async function togglePuzzleRecording() {
+  const p = PUZZLE_LEVELS[currentPuzzleIdx % PUZZLE_LEVELS.length];
+  const btn = document.getElementById('btn-puzzle-mic');
+  const statusEl = document.getElementById('puzzle-heard-status');
+
+  if (!isPieceSnapped) {
+    showToast('First tap the missing sound piece to complete the word!', 'warn');
+    return;
+  }
+
+  if (!puzzleRecorder.isRecording) {
+    try {
+      await puzzleRecorder.start(p.lang, (text) => {
+        statusEl.textContent = `Heard: "${text}"`;
+      });
+      btn.classList.add('recording');
+      btn.textContent = '⏹️ Stop & Score Cat';
+      statusEl.textContent = `Listening… say "${p.word}" clearly!`;
+    } catch(err) {
+      showToast('Microphone permission needed: ' + err.message, 'warn');
+    }
+  } else {
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak Word to Cat!';
+    statusEl.textContent = 'Cat is listening & checking your pronunciation… 🐱✨';
+
+    const resultObj = await puzzleRecorder.stop();
+    const audioBlob = resultObj ? resultObj.blob : null;
+    const capturedText = resultObj ? resultObj.transcript : '';
+
+    if (audioBlob) {
+      try {
+        const result = await uploadAndAnalyzeAudio(audioBlob, {
+          language: p.lang,
+          target_word: p.word,
+          target_phoneme: p.phoneme,
+          observed_transcript: capturedText,
+          child_id: getSelectedChildId() || ''
+        }, capturedText);
+
+        handlePuzzleScore(result, p);
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+      }
+    }
+  }
+}
+
+// ── HANDLE SCORE & CAT REACTION ──────────────────────────────
+function handlePuzzleScore(result, puzzle) {
+  const score = Math.round(result.score || 0);
+  const resultBox = document.getElementById('puzzle-result-box');
+  resultBox.style.display = 'block';
+
+  document.getElementById('puzzle-score-display').textContent = `${score}%`;
+  document.getElementById('puzzle-feedback-text').textContent = result.feedback;
+
+  const scoreEl = document.getElementById('puzzle-score-display');
+  const reactionLabel = document.getElementById('puzzle-reaction-label');
+
+  if (score >= 80) {
+    // 💃 DANCING CAT!
+    scoreEl.style.color = 'var(--success)';
+    reactionLabel.textContent = '💃 DANCING CAT!';
+    reactionLabel.style.color = 'var(--success)';
+    setCatState('dance', `"WOOHOO! Super star speech! Look at me groove!" 🕺💃🎉`);
+
+    solvedCount++;
+    starsEarned += 3;
+    updateCounters();
+    triggerDanceEffects();
+    playDanceFanfare();
+
+  } else if (score >= 50) {
+    // 😺 HAPPY CAT!
+    scoreEl.style.color = 'var(--warning)';
+    reactionLabel.textContent = '😺 Happy Purr!';
+    reactionLabel.style.color = 'var(--warning)';
+    setCatState('happy', `"Good job! I'm purring with joy! Almost dancing—try once more!" 😺✨`);
+
+    starsEarned += 1;
+    updateCounters();
+    playMelodicNote(659.25, 0.4);
+
+  } else {
+    // 😿 SAD / ENCOURAGING CAT!
+    scoreEl.style.color = 'var(--danger)';
+    reactionLabel.textContent = '😿 Encouraging Mew';
+    reactionLabel.style.color = 'var(--danger)';
+    setCatState('sad', `"Aww, nice try! Check the tongue hint: ${puzzle.posture} Let's try again!" 🐾`);
+    playSadMeow();
+  }
+}
+
+function updateCounters() {
+  document.getElementById('score-counter').textContent = `${solvedCount} / ${PUZZLE_LEVELS.length}`;
+  document.getElementById('stars-badge').textContent   = `${starsEarned} ⭐`;
+}
+
+// ── CAT MASCOT STATE CONTROLLER ──────────────────────────────
+function setCatState(state, message) {
+  const catBox = document.getElementById('cat-mascot');
+  const bubble = document.getElementById('cat-bubble-text');
+  const sunglasses = document.getElementById('cat-sunglasses');
+  const faceGroup = document.getElementById('cat-face-features');
+
+  catBox.className = 'cat-mascot-box';
+  bubble.textContent = message;
+
+  if (state === 'dance') {
+    catBox.classList.add('cat-dancing');
+    sunglasses.style.display = 'block';
+    faceGroup.innerHTML = `
+      <!-- Big Dancing Star Eyes -->
+      <text x="80" y="90" font-size="14" fill="#FFD700">⭐</text>
+      <text x="110" y="90" font-size="14" fill="#FFD700">⭐</text>
+      <!-- Singing/Laughing Mouth -->
+      <path d="M 90 102 Q 100 114 110 102 Z" fill="#D63031"/>
+    `;
+  } else if (state === 'happy') {
+    catBox.classList.add('cat-happy');
+    sunglasses.style.display = 'none';
+    faceGroup.innerHTML = `
+      <!-- Happy Smiling Arc Eyes -->
+      <path d="M 80 88 Q 87 80 94 88" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 106 88 Q 113 80 120 88" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+      <!-- Cheerful Smile -->
+      <path d="M 92 102 Q 100 110 108 102" fill="none" stroke="#222" stroke-width="2.8" stroke-linecap="round"/>
+    `;
+  } else if (state === 'sad') {
+    catBox.classList.add('cat-sad');
+    sunglasses.style.display = 'none';
+    faceGroup.innerHTML = `
+      <!-- Sad Big Drooping Eyes -->
+      <ellipse cx="85" cy="87" rx="5.5" ry="7" fill="#222"/>
+      <ellipse cx="115" cy="87" rx="5.5" ry="7" fill="#222"/>
+      <circle cx="87" cy="85" r="2" fill="#FFF"/>
+      <circle cx="117" cy="85" r="2" fill="#FFF"/>
+      <!-- Teardrop -->
+      <circle cx="78" cy="98" r="3.5" fill="#54A0FF" opacity="0.9"/>
+      <!-- Sad Mouth Curve -->
+      <path d="M 94 106 Q 100 101 106 106" fill="none" stroke="#222" stroke-width="2.8" stroke-linecap="round"/>
+    `;
+  } else {
+    // Idle
+    sunglasses.style.display = 'none';
+    faceGroup.innerHTML = `
+      <!-- Friendly Open Eyes -->
+      <circle cx="85" cy="85" r="5" fill="#222"/>
+      <circle cx="87" cy="83" r="1.8" fill="#FFF"/>
+      <circle cx="115" cy="85" r="5" fill="#222"/>
+      <circle cx="117" cy="83" r="1.8" fill="#FFF"/>
+      <path d="M 94 103 Q 100 108 106 103" fill="none" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>
+    `;
+  }
+}
+
+// ── DANCE VISUAL & AUDIO EFFECTS ──────────────────────────────
+function triggerDanceEffects() {
+  const container = document.getElementById('effects-layer');
+  container.innerHTML = '';
+
+  const notes = ['🎵', '🎶', '✨', '⭐', '🎉', '💃'];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'floating-note';
+    el.textContent = notes[Math.floor(Math.random() * notes.length)];
+    el.style.left = (Math.random() * 85 + 5) + '%';
+    el.style.animationDelay = (Math.random() * 1.2) + 's';
+    el.style.fontSize = (Math.random() * 1.5 + 1.2) + 'rem';
+    container.appendChild(el);
+  }
+}
+
+function loadNextPuzzle() {
+  currentPuzzleIdx++;
+  loadPuzzle(currentPuzzleIdx);
+}
+
+// ── SYNTHESIZED BACKGROUND MUSIC (WEB AUDIO API) ──────────────
+function getAudioContext() {
+  if (!musicAudioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    musicAudioCtx = new AudioCtx();
+  }
+  if (musicAudioCtx.state === 'suspended') {
+    musicAudioCtx.resume();
+  }
+  return musicAudioCtx;
+}
+
+const MELODY_NOTES = [
+  523.25, 659.25, 783.99, 659.25, // C5, E5, G5, E5
+  880.00, 783.99, 659.25, 587.33, // A5, G5, E5, D5
+  523.25, 587.33, 659.25, 523.25, // C5, D5, E5, C5
+  783.99, 659.25, 587.33, 523.25  // G5, E5, D5, C5
+];
+let melodyStep = 0;
+
+function startBackgroundMusic() {
+  if (musicPlaying) return;
+  const ctx = getAudioContext();
+  musicPlaying = true;
+  document.getElementById('music-state-text').textContent = 'ON';
+  document.getElementById('music-state-text').style.color = 'var(--success)';
+
+  musicTimer = setInterval(() => {
+    if (!musicPlaying) return;
+    const freq = MELODY_NOTES[melodyStep % MELODY_NOTES.length];
+    playSoftChime(freq, 0.22);
+    melodyStep++;
+  }, 380);
+}
+
+function stopBackgroundMusic() {
+  musicPlaying = false;
+  if (musicTimer) clearInterval(musicTimer);
+  document.getElementById('music-state-text').textContent = 'OFF';
+  document.getElementById('music-state-text').style.color = 'var(--text-muted)';
+}
+
+function toggleBackgroundMusic() {
+  if (musicPlaying) {
+    stopBackgroundMusic();
+  } else {
+    startBackgroundMusic();
+  }
+}
+
+function playSoftChime(freq, duration = 0.2) {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle'; // Gentle bell-like tone
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {}
+}
+
+function playMelodicNote(freq, duration = 0.3) {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function playDanceFanfare() {
+  const fanfare = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+  fanfare.forEach((f, i) => {
+    setTimeout(() => playMelodicNote(f, 0.35), i * 140);
+  });
+}
+
+function playCatMeow() {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(450, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.18);
+    osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.45);
+
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  } catch(e) {}
+}
+
+function playSadMeow() {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(420, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.5);
+
+    gain.gain.setValueAtTime(0.07, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+</script>
+{% endblock %}

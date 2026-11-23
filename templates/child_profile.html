@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}My Children{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="dash-header">
+  <div class="dash-header-left">
+    <h2>My Children's Profiles 🧒</h2>
+    <p>Select a child to begin their practice session, or add a new profile.</p>
+  </div>
+  <div class="dash-header-actions">
+    <a href="/parent/" class="btn btn-white btn-sm">📊 Parent Dashboard</a>
+    <button class="btn btn-white btn-sm" id="open-add-child">+ Add New Child</button>
+  </div>
+</div>
+
+<div id="alert-box"></div>
+
+<!-- Children Grid -->
+<div class="grid-3" id="children-grid">
+  {% if children %}
+    {% for child in children %}
+    <div class="child-card card-hover" onclick="selectChild('{{ child.id }}', '{{ child.name }}', '{{ child.avatar|default:"🧒" }}')">
+      <div class="child-card-header">
+        <span class="child-card-avatar">{{ child.avatar|default:"🧒" }}</span>
+        <div class="child-card-name">{{ child.name }}</div>
+        <div class="child-card-age">{{ child.age }} years old</div>
+      </div>
+      <div class="child-card-body">
+        <div class="child-card-langs">
+          {% for lang in child.languages %}
+            <span class="badge {% if lang == 'hindi' %}badge-hindi{% else %}badge-english{% endif %}">
+              {% if lang == 'hindi' %}🇮🇳{% else %}🇬🇧{% endif %} {{ lang|title }}
+            </span>
+          {% endfor %}
+        </div>
+        <div class="child-card-actions" onclick="event.stopPropagation();">
+          <button class="btn btn-primary"
+            onclick="selectChild('{{ child.id }}', '{{ child.name }}', '{{ child.avatar|default:"🧒" }}')">
+            🎯 Practice
+          </button>
+          <a href="/parent/?child={{ child.id }}" class="btn btn-ghost">📈 Reports</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Add another child card -->
+    <div class="child-card" style="border-style:dashed; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; gap:12px; opacity:0.65; transition:opacity 0.2s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.65" onclick="document.getElementById('add-child-modal').classList.add('open')">
+      <span style="font-size:2.8rem;">➕</span>
+      <div style="font-weight:800; color:var(--text-muted);">Add Another Child</div>
+    </div>
+
+  {% else %}
+    <!-- Empty state -->
+    <div style="grid-column:1/-1;">
+      <div class="card" style="text-align:center; padding:64px 32px; max-width:600px; margin:0 auto;">
+        <span style="font-size:4rem; display:block; margin-bottom:20px; animation: float 3s ease-in-out infinite;">🌸</span>
+        <h2 style="font-size:1.6rem; font-weight:900; color:var(--text-dark); margin-bottom:12px;">Welcome to SpeechBloom AI!</h2>
+        <p style="color:var(--text-muted); font-size:1rem; line-height:1.7; max-width:420px; margin:0 auto 28px;">
+          Add your child's profile to unlock personalized speech practice, interactive games, and progress tracking.
+        </p>
+        <button class="btn btn-primary btn-lg" onclick="document.getElementById('add-child-modal').classList.add('open')">
+          + Add Your First Child
+        </button>
+        <div style="margin-top:24px; display:flex; gap:24px; justify-content:center; flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="font-size:1.6rem;">🎮</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); font-weight:700; margin-top:4px;">6 Speech Games</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.6rem;">📊</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); font-weight:700; margin-top:4px;">Progress Reports</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.6rem;">🏆</div>
+            <div style="font-size:0.82rem; color:var(--text-muted); font-weight:700; margin-top:4px;">Stars & Badges</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ── ADD CHILD MODAL ───────────────────────────────────── -->
+<div id="add-child-modal" class="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('add-child-modal').classList.remove('open')">✕</button>
+    <h3 class="modal-title">Add Child Profile 🧒</h3>
+
+    <form id="child-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="child-name">Child's First Name</label>
+        <input class="form-control" type="text" id="child-name" required placeholder="e.g. Aarav or Maya" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="child-age">Age</label>
+        <input class="form-control" type="number" id="child-age" min="2" max="15" value="6" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Practice Languages</label>
+        <div style="display:flex; gap:20px; margin-top:8px; flex-wrap:wrap;">
+          <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-weight:700;">
+            <input type="checkbox" id="lang-english" checked> 🇬🇧 English
+          </label>
+          <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-weight:700;">
+            <input type="checkbox" id="lang-hindi"> 🇮🇳 Hindi (हिंदी)
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Pick an Avatar</label>
+        <div class="avatar-grid" id="avatar-grid">
+          <div class="avatar-option selected" data-avatar="🧒"  onclick="selectAvatar(this)">🧒</div>
+          <div class="avatar-option"          data-avatar="👦"  onclick="selectAvatar(this)">👦</div>
+          <div class="avatar-option"          data-avatar="👧"  onclick="selectAvatar(this)">👧</div>
+          <div class="avatar-option"          data-avatar="🦁"  onclick="selectAvatar(this)">🦁</div>
+          <div class="avatar-option"          data-avatar="🐼"  onclick="selectAvatar(this)">🐼</div>
+          <div class="avatar-option"          data-avatar="🐰"  onclick="selectAvatar(this)">🐰</div>
+          <div class="avatar-option"          data-avatar="🐯"  onclick="selectAvatar(this)">🐯</div>
+          <div class="avatar-option"          data-avatar="🦊"  onclick="selectAvatar(this)">🦊</div>
+          <div class="avatar-option"          data-avatar="🐸"  onclick="selectAvatar(this)">🐸</div>
+          <div class="avatar-option"          data-avatar="🦋"  onclick="selectAvatar(this)">🦋</div>
+        </div>
+        <input type="hidden" id="child-avatar" value="🧒">
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:28px;">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('add-child-modal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="add-child-btn">Save &amp; Select Child →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Open add modal via header button
+document.getElementById('open-add-child').addEventListener('click', () => {
+  document.getElementById('add-child-modal').classList.add('open');
+});
+
+// Close modal on overlay click
+document.getElementById('add-child-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+// Avatar selection
+function selectAvatar(el) {
+  document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('child-avatar').value = el.dataset.avatar;
+}
+
+// Select child → save to localStorage → go to child hub
+function selectChild(id, name, avatar) {
+  setChildContext(id, name, avatar);
+  updateNavChildBadge();
+  showToast(`Selected ${name} — opening practice hub…`, 'success');
+  setTimeout(() => { window.location.href = `/dashboard/?child_id=${id}`; }, 700);
+}
+
+// Add child form
+document.getElementById('child-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn      = document.getElementById('add-child-btn');
+  const name     = document.getElementById('child-name').value.trim();
+  const age      = document.getElementById('child-age').value;
+  const avatar   = document.getElementById('child-avatar').value;
+  const languages = [];
+  if (document.getElementById('lang-english').checked) languages.push('english');
+  if (document.getElementById('lang-hindi').checked)   languages.push('hindi');
+
+  if (!name) { showToast('Please enter the child\'s name.', 'warn'); return; }
+  if (!languages.length) { showToast('Please select at least one language.', 'warn'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res = await apiCall('/api/children', 'POST', { name, age: parseInt(age), avatar, languages });
+    if (res.success) {
+      document.getElementById('add-child-modal').classList.remove('open');
+      showToast(`${name}'s profile created! Starting their hub…`, 'success');
+      setChildContext(res.child.id, res.child.name, res.child.avatar);
+      setTimeout(() => { window.location.href = `/dashboard/?child_id=${res.child.id}`; }, 900);
+    }
+  } catch (err) {
+    showAlert(err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Save & Select Child →';
+  }
+});
+</script>
+{% endblock %}

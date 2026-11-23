@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Therapist Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="dash-header">
+  <div class="dash-header-left">
+    <h2>Therapist Overview 👩‍⚕️</h2>
+    <p>Review client practice data, phoneme patterns, and progress reports.</p>
+  </div>
+  <div class="dash-header-actions">
+    <a href="/profile/" class="btn btn-white btn-sm">🧒 Manage Clients</a>
+  </div>
+</div>
+
+{% if not is_logged_in %}
+<div class="card" style="text-align:center; padding:48px 32px; margin-top:24px;">
+  <span style="font-size:3rem; display:block; margin-bottom:16px;">🔒</span>
+  <h3 style="font-weight:900; margin-bottom:12px;">Sign in to access the Therapist Dashboard</h3>
+  <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
+    <a href="/login/" class="btn btn-primary">Sign In</a>
+    <a href="/register/" class="btn btn-outline">Register as SLP</a>
+  </div>
+</div>
+{% else %}
+<div class="card" style="margin-top:24px;">
+  <div class="section-header" style="margin-bottom:20px;">
+    <h3 style="font-weight:900; color:var(--primary);">Client Practice Records</h3>
+    <a href="/profile/" class="btn btn-ghost btn-sm">+ Add Client Profile</a>
+  </div>
+  <div id="therapist-clients-container">
+    <div class="card skeleton" style="height:80px;margin-bottom:12px;"></div>
+    <div class="card skeleton" style="height:80px;"></div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  {% if not is_logged_in %} return; {% endif %}
+  try {
+    const res = await apiCall('/api/dashboard/parent');
+    if (!res.success) return;
+    const box = document.getElementById('therapist-clients-container');
+    if (res.children_summary && res.children_summary.length > 0) {
+      box.innerHTML = res.children_summary.map(item => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:2rem;">${item.child.avatar||'🧒'}</span>
+            <div>
+              <div style="font-weight:900;">${item.child.name}</div>
+              <div style="font-size:0.83rem;color:var(--text-muted);">Age ${item.child.age} · ${(item.child.languages||['english']).join(', ')}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span class="badge badge-primary">${item.total_sessions} sessions</span>
+            <span style="font-weight:900;color:${item.average_score>=80?'var(--success)':'var(--warning)'};">${item.average_score}% avg</span>
+            <button class="btn btn-primary btn-xs" onclick="goToClient(${item.child.id},'${item.child.name}','${item.child.avatar||'🧒'}')">View Progress →</button>
+          </div>
+        </div>`).join('');
+    } else {
+      box.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);"><p>No client profiles yet.</p><a href="/profile/" class="btn btn-primary" style="margin-top:12px;">+ Add Client</a></div>';
+    }
+  } catch {}
+});
+
+function goToClient(id, name, avatar) {
+  setChildContext(id, name, avatar);
+  window.location.href = `/dashboard/?child_id=${id}#reports`;
+}
+</script>
+{% endblock %}

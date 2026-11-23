@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Repeat After Me{% endblock %}
+
+{% block content %}
+
+<!-- Back -->
+<a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;margin-bottom:24px;">
+  ← Back to Games
+</a>
+
+<div style="max-width:600px; margin:0 auto; text-align:center;">
+  <div class="card" style="padding:36px 32px;">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
+      <span class="badge badge-primary" style="font-size:0.9rem; padding:6px 16px;">🔊 Repeat After Me</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:0.85rem; color:var(--text-muted); font-weight:700;">Word <span id="word-counter">1</span> of <span id="word-total">5</span></span>
+        <div style="width:80px; height:8px; background:var(--border); border-radius:var(--radius-full); overflow:hidden;">
+          <div id="progress-bar" style="height:100%; background:var(--primary); border-radius:var(--radius-full); width:20%; transition:width 0.4s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Target display -->
+    <div class="word-target" id="repeat-word">Lion</div>
+    <div class="phoneme-bubble" id="repeat-phoneme" style="margin-bottom:20px;">Sound: /l/</div>
+
+    <!-- Listen -->
+    <button class="btn btn-ghost btn-sm" id="listen-btn" style="margin-bottom:28px;">🔊 Hear It</button>
+
+    <!-- Mic -->
+    <div style="margin-bottom:20px;">
+      <button id="mic-btn" class="record-btn">🎤</button>
+      <p id="mic-status" style="margin-top:14px; font-weight:800; color:var(--text-muted); font-size:0.93rem;">Tap to record</p>
+      <div id="live-heard" style="min-height:24px; font-weight:800; color:var(--primary); margin-top:6px;"></div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="game-feedback" style="display:none; padding:20px; background:var(--bg); border-radius:var(--radius-sm); margin-top:16px; border:1px solid var(--border);">
+      <div class="stars-container" id="stars-display">⭐⭐⭐</div>
+      <div class="score-circle" id="score-circle" style="margin:12px auto 16px; width:80px; height:80px; font-size:1.4rem;">88%</div>
+      <p id="feedback-text" style="font-weight:700; font-size:1rem; margin-bottom:16px; line-height:1.6; color:var(--text-body);">Great effort!</p>
+      <button class="btn btn-primary" onclick="nextWord()">Next Word ➡️</button>
+    </div>
+
+    <!-- Summary (shows at end) -->
+    <div id="game-summary" style="display:none; padding:28px; background:linear-gradient(135deg,#F0EFFF,#FFFFFF); border-radius:var(--radius-sm); margin-top:16px;">
+      <div style="font-size:2.8rem; margin-bottom:12px;">🏆</div>
+      <h3 style="font-weight:900; color:var(--primary); margin-bottom:8px;">Round Complete!</h3>
+      <p style="color:var(--text-muted); margin-bottom:16px;">Total score: <strong id="total-score">—</strong></p>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="restartGame()">Play Again 🔄</button>
+        <a href="javascript:history.back()" class="btn btn-outline">Back to Games</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/audio.js"></script>
+<script>
+const words = [
+  { word: 'Sun',    phoneme: 's', lang: 'english' },
+  { word: 'सूरज',   phoneme: 'स', lang: 'hindi' },
+  { word: 'Rabbit', phoneme: 'r', lang: 'english' },
+  { word: 'मछली',   phoneme: 'म', lang: 'hindi' },
+  { word: 'Fish',   phoneme: 'f', lang: 'english' }
+];
+
+let currentIndex = 0;
+let totalScore = 0;
+let roundCount = 0;
+const recorder = new AudioRecorder();
+
+function renderCurrent() {
+  const item = words[currentIndex];
+  document.getElementById('repeat-word').textContent   = item.word;
+  document.getElementById('repeat-phoneme').textContent = `Sound: /${item.phoneme}/`;
+  document.getElementById('game-feedback').style.display  = 'none';
+  document.getElementById('live-heard').textContent      = '';
+  document.getElementById('mic-status').textContent      = 'Tap to record';
+  document.getElementById('mic-status').style.color      = 'var(--text-muted)';
+  document.getElementById('word-counter').textContent    = currentIndex + 1;
+  document.getElementById('word-total').textContent      = words.length;
+  document.getElementById('progress-bar').style.width    = `${((currentIndex+1)/words.length)*100}%`;
+}
+
+document.getElementById('listen-btn').addEventListener('click', () => {
+  speakWord(words[currentIndex].word, words[currentIndex].lang);
+});
+
+const micBtn    = document.getElementById('mic-btn');
+const micStatus = document.getElementById('mic-status');
+
+micBtn.addEventListener('click', async () => {
+  const item = words[currentIndex];
+  if (!recorder.isRecording) {
+    try {
+      await recorder.start(item.lang, (text) => {
+        document.getElementById('live-heard').textContent = `Heard: "${text}"`;
+      });
+      micBtn.classList.add('recording');
+      micStatus.textContent = 'Listening… tap again to stop.';
+      micStatus.style.color = 'var(--secondary)';
+    } catch (err) {
+      showToast('Microphone needed: ' + err.message, 'warn');
+    }
+  } else {
+    micBtn.classList.remove('recording');
+    micStatus.textContent = 'Evaluating…';
+    micStatus.style.color = 'var(--primary)';
+
+    const resultObj = await recorder.stop();
+    const blob       = resultObj ? resultObj.blob : null;
+    const transcript = resultObj ? resultObj.transcript : '';
+
+    if (blob) {
+      try {
+        const res = await uploadAndAnalyzeAudio(blob, {
+          language: item.lang, target_word: item.word,
+          target_phoneme: item.phoneme, observed_transcript: transcript,
+          child_id: getSelectedChildId() || ''
+        }, transcript);
+
+        const score = Math.round(res.score);
+        totalScore += score; roundCount++;
+
+        document.getElementById('game-feedback').style.display = 'block';
+        const circle = document.getElementById('score-circle');
+        circle.textContent = `${score}%`;
+        circle.style.background = score >= 80 ? 'linear-gradient(135deg,var(--success),#2FAA47)' : score >= 55 ? 'linear-gradient(135deg,var(--warning),#E6A400)' : 'linear-gradient(135deg,var(--danger),#C30000)';
+        document.getElementById('stars-display').textContent = '⭐'.repeat(res.stars) + '☆'.repeat(3-res.stars);
+        document.getElementById('feedback-text').textContent = res.feedback;
+        micStatus.textContent = 'Done!';
+        micStatus.style.color = 'var(--success)';
+      } catch (err) {
+        micStatus.textContent = err.message;
+      }
+    }
+  }
+});
+
+function nextWord() {
+  currentIndex++;
+  if (currentIndex >= words.length) {
+    document.getElementById('game-feedback').style.display = 'none';
+    document.getElementById('game-summary').style.display  = 'block';
+    document.getElementById('total-score').textContent     = roundCount > 0 ? `${Math.round(totalScore/roundCount)}% average` : '—';
+  } else {
+    renderCurrent();
+  }
+}
+
+function restartGame() {
+  currentIndex = 0; totalScore = 0; roundCount = 0;
+  document.getElementById('game-summary').style.display = 'none';
+  renderCurrent();
+}
+
+renderCurrent();
+</script>
+{% endblock %}

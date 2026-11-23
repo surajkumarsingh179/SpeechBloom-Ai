@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Picture to Word{% endblock %}
+
+{% block content %}
+
+<a href="javascript:history.back()" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-weight:700;text-decoration:none;font-size:0.9rem;margin-bottom:24px;">
+  ← Back to Games
+</a>
+
+<div style="max-width:580px; margin:0 auto; text-align:center;">
+  <div class="card" style="padding:36px 32px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:10px;">
+      <span class="badge badge-primary" style="font-size:0.9rem;padding:6px 16px;">🖼️ Picture to Word</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:0.85rem;color:var(--text-muted);font-weight:700;">Picture <span id="pic-counter">1</span> of <span id="pic-total">5</span></span>
+      </div>
+    </div>
+
+    <div style="font-size:6rem;margin:20px 0;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.1));" id="pic-display">🍎</div>
+    <div class="word-target" id="pic-word" style="font-size:2rem;margin-bottom:6px;">Apple</div>
+    <p style="color:var(--text-muted);font-weight:700;margin-bottom:24px;" id="pic-hint">Say the word out loud!</p>
+
+    <button id="listen-btn" class="btn btn-ghost btn-sm" style="margin-bottom:20px;">🔊 Hear It</button>
+
+    <div>
+      <button id="mic-btn" class="record-btn">🎤</button>
+      <p id="mic-status" style="margin-top:14px;font-weight:800;color:var(--text-muted);font-size:0.93rem;">Tap microphone to speak</p>
+      <div id="live-heard" style="min-height:24px;font-weight:800;color:var(--primary);margin-top:6px;"></div>
+    </div>
+
+    <div id="pic-result" style="display:none;margin-top:24px;padding:20px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
+      <div class="stars-container" id="pic-stars">⭐⭐⭐</div>
+      <div class="score-circle" id="pic-score-circle" style="margin:12px auto 16px;width:80px;height:80px;font-size:1.4rem;">—</div>
+      <p id="pic-feedback" style="font-weight:700;margin-bottom:16px;line-height:1.6;"></p>
+      <button class="btn btn-primary" onclick="nextPicture()">Next Picture ➡️</button>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/audio.js"></script>
+<script>
+const pictures = [
+  { emoji: '🍎', word: 'Apple',  phoneme: 'æ',  lang: 'english' },
+  { emoji: '🐱', word: 'Cat',    phoneme: 'k',  lang: 'english' },
+  { emoji: '🌞', word: 'Sun',    phoneme: 's',  lang: 'english' },
+  { emoji: '🐟', word: 'Fish',   phoneme: 'f',  lang: 'english' },
+  { emoji: '🌸', word: 'Flower', phoneme: 'fl', lang: 'english' },
+];
+
+let currentIdx = 0;
+const recorder = new AudioRecorder();
+const micBtn    = document.getElementById('mic-btn');
+const micStatus = document.getElementById('mic-status');
+const liveHeard = document.getElementById('live-heard');
+
+function renderCurrent() {
+  const p = pictures[currentIdx];
+  document.getElementById('pic-display').textContent   = p.emoji;
+  document.getElementById('pic-word').textContent      = p.word;
+  document.getElementById('pic-hint').textContent      = `Say "${p.word}" out loud!`;
+  document.getElementById('pic-result').style.display  = 'none';
+  document.getElementById('pic-counter').textContent   = currentIdx + 1;
+  document.getElementById('pic-total').textContent     = pictures.length;
+  liveHeard.textContent = '';
+  micStatus.textContent = 'Tap microphone to speak';
+  micStatus.style.color = 'var(--text-muted)';
+}
+
+document.getElementById('listen-btn').addEventListener('click', () => {
+  const p = pictures[currentIdx];
+  speakWord(p.word, p.lang);
+});
+
+micBtn.addEventListener('click', async () => {
+  const p = pictures[currentIdx];
+  if (!recorder.isRecording) {
+    try {
+      await recorder.start(p.lang, (text) => {
+        liveHeard.textContent = `Heard: "${text}"`;
+      });
+      micBtn.classList.add('recording');
+      micStatus.textContent = 'Listening… tap again to stop.';
+      micStatus.style.color = 'var(--secondary)';
+    } catch (err) {
+      showToast('Microphone access needed: ' + err.message, 'warn');
+    }
+  } else {
+    micBtn.classList.remove('recording');
+    micStatus.textContent = 'Evaluating…';
+    micStatus.style.color = 'var(--primary)';
+
+    // ✅ Fix: recorder.stop() returns {blob, transcript} — destructure correctly
+    const resultObj  = await recorder.stop();
+    const audioBlob  = resultObj ? resultObj.blob : null;
+    const transcript = resultObj ? resultObj.transcript : '';
+
+    if (audioBlob) {
+      try {
+        const res = await uploadAndAnalyzeAudio(audioBlob, {
+          language:            p.lang,
+          target_word:         p.word,
+          target_phoneme:      p.phoneme,
+          observed_transcript: transcript,
+          child_id:            getSelectedChildId() || ''
+        }, transcript);
+
+        const score  = Math.round(res.score);
+        const circle = document.getElementById('pic-score-circle');
+        circle.textContent = `${score}%`;
+        circle.style.background = score >= 80
+          ? 'linear-gradient(135deg,var(--success),#2FAA47)'
+          : score >= 55
+            ? 'linear-gradient(135deg,var(--warning),#E6A400)'
+            : 'linear-gradient(135deg,var(--danger),#C30000)';
+
+        document.getElementById('pic-stars').textContent    = '⭐'.repeat(res.stars) + '☆'.repeat(3 - res.stars);
+        document.getElementById('pic-feedback').textContent = res.feedback;
+        document.getElementById('pic-result').style.display = 'block';
+        micStatus.textContent = 'Done!';
+        micStatus.style.color = 'var(--success)';
+      } catch (err) {
+        micStatus.textContent = 'Error: ' + err.message;
+        micStatus.style.color = 'var(--danger)';
+      }
+    }
+  }
+});
+
+function nextPicture() {
+  currentIdx = (currentIdx + 1) % pictures.length;
+  renderCurrent();
+}
+
+renderCurrent();
+</script>
+{% endblock %}
